@@ -3,18 +3,15 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to thegamecracks's documentation!
-=========================================
+Homepage
+========
+
+Hi there! I'm currently experimenting with using **Sphinx** to collect
+my articles here.
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+   :caption: discord.py
+   :maxdepth: 1
+   :glob:
 
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   discord.py/*
