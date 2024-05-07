@@ -1,6 +1,8 @@
 Writing Persistent Views
 ========================
 
+.. toctree::
+
 In `discord.py`_, persistent views allow a bot to handle interactions from
 message components (i.e. buttons and select menus) after the bot has restarted.
 

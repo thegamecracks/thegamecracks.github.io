@@ -10,15 +10,7 @@ Hi there! I'm currently experimenting with using **Sphinx** to collect
 my articles here.
 
 .. toctree::
-   :caption: discord.py
-   :maxdepth: 1
-   :glob:
+   :titlesonly:
 
-   discord.py/*
-
-.. toctree::
-   :caption: Python
-   :maxdepth: 1
-   :glob:
-
-   python/*
+   discord.py/index
+   python/index

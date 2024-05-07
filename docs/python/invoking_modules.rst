@@ -1,6 +1,8 @@
 Using ``python -m`` to invoke modules as scripts
 ================================================
 
+.. toctree::
+
 You might have seen the ``-m`` flag used in various python commands online,
 or was told by someone else to use ``python -m`` to "run a module as a script",
 but didn't really understand what that meant. This gist covers how that flag
