@@ -225,4 +225,6 @@ state on disk.
     client = MyClient()
     client.run("TOKEN")
 
+.. rubric:: Footnotes
+
 Original guide: https://gist.github.com/thegamecracks/0f9ab7ad3982e65ff4aa429acb39cc4e
