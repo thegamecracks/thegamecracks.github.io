@@ -15,3 +15,10 @@ my articles here.
    :glob:
 
    discord.py/*
+
+.. toctree::
+   :caption: Python
+   :maxdepth: 1
+   :glob:
+
+   python/*
