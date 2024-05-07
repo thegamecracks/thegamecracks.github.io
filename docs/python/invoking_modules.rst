@@ -96,7 +96,7 @@ like ``__init__.py`` and relative imports:
         from .api import download
     ImportError: attempted relative import with no known parent package
 
-To run a module inside a package, you should use ``-m`` option like so:
+To run a module inside a package, you should use the ``-m`` option like so:
 
 .. code-block:: shell
 
