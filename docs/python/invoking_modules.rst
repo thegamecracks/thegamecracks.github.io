@@ -136,6 +136,8 @@ by renaming ``main.py`` to ``__main__.py``:
 .. |dunder_main| replace:: ``__main__.py``
 .. _dunder_main: https://docs.python.org/3/library/__main__.html#main-py-in-python-packages
 
+Yup, that's it. Now, onto the module search path!
+
 What does importing a module really mean?
 -----------------------------------------
 
