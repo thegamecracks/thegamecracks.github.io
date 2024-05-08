@@ -41,8 +41,7 @@ had ``CreateTicketView`` sent with them.
 This works well for views that are stateless, meaning the view doesn't have any
 attributes that need to be different between two messages with the same view.
 However, sometimes you will need to implement views that require state.
-The following example shows a view with a button that can only be used
-by a particular user:
+The following example shows a view that can only be used by a particular user:
 
 .. code-block:: python
 
@@ -65,9 +64,9 @@ by a particular user:
                 return False
             return True
 
-To handle a view like this after startup, you will need to pass the original
-arguments to ``__init__()`` and give discord.py the same message ID that
-you sent with your view.
+To handle views like this after startup, you will need to pass the original
+arguments to ``__init__()`` and give discord.py the same message IDs that
+you sent with each of your view instances.
 For a few messages, you can manually hardcode those values like so:
 
 .. code-block:: python
