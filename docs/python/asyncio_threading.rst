@@ -372,7 +372,7 @@ network sockets or named pipes used in IPC.
 .. _I/O Completion Ports: https://learn.microsoft.com/en-ca/windows/win32/fileio/i-o-completion-ports
 
 So why does this matter to using ``asyncio.Queue`` from another thread?
-Well, you know how once you call a function that blocks, that thread can't
+Well, you know how once a thread calls a function that blocks, that thread can't
 do anything else? [#signals]_ For an event loop, the same issue exists too.
 If you were to call ``queue.put_nowait()`` from the worker thread while the
 event loop was waiting on an event, the item *would* get queued but nothing
