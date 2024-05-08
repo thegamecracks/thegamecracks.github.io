@@ -3,18 +3,17 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+.. margin::
+
+   .. postlist:: 5
+      :excerpts:
+      :sort:
+
 Homepage
 ========
 
 Hi there! I'm currently experimenting with using **Sphinx** to collect
 my articles here.
-
-.. postlist:: 5
-   :excerpts:
-   :sort:
-
-Guides
-------
 
 .. toctree::
    :titlesonly:
