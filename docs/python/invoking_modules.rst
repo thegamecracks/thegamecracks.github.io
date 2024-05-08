@@ -31,10 +31,10 @@ so you decide to split its functionality into separate `modules`_:
 .. code-block:: python
    :force:
 
-    api.py    # interacts with GitHub's API using the requests library
-    cache.py  # stores release information to avoid unnecessary requests
-    cli.py    # provides an argparse interface for the user
-    main.py   # the entry script that your users should run
+    api.py
+    cache.py
+    cli.py
+    main.py
         from api import download
         from cli import parser
 
