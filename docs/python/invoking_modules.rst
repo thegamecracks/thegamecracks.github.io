@@ -219,7 +219,7 @@ Or you'll organize all of your scripts into a package in your project root:
 .. code-block:: shell
 
     /my_project $ python -m my_package --help
-    /my_project $ python -m my_package.migrate foo.csv bar.csv
+    /my_project $ python -m my_package.migrate --input foo.csv --input bar.csv
 
 However you organize your scripts, the one thing I recommend is setting your
 project root as the current working directory. ``cd`` ing around to run
