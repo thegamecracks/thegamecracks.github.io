@@ -103,14 +103,13 @@ To run a module inside a package, you should use the ``-m`` option like so:
     /my_project $ python -m my_downloader.main
 
 This essentially imports the module described by the path ``my_downloader.main``,
-and sets its ``__name__`` constant to ``"__main__"``. The ``-m`` option also
-adds your current working directory to `sys.path`_, a list of directories
-that Python will search when attempting to resolve ``my_downloader``.
-As a result, the ``my_downloader`` package goes through the entire import system,
-executing ``__init__.py`` and setting up the context for ``.`` relative imports,
+and sets its ``__name__`` constant to ``"__main__"``. As a result, the
+``my_downloader`` package goes through the entire import system, executing
+``__init__.py`` and setting up the context for ``.`` relative imports,
 allowing ``main.py`` to run as intended.
 
-.. _sys.path: https://docs.python.org/3/library/sys.html#sys.path
+...don't understand how importing works here? Don't worry, I'll cover
+this in a bit, but before that I want to mention using ``__main__.py``.
 
 Using ``__main__.py``
 ---------------------
@@ -139,9 +138,102 @@ by renaming ``main.py`` to ``__main__.py``:
 .. |dunder_main| replace:: ``__main__.py``
 .. _dunder_main: https://docs.python.org/3/library/__main__.html#main-py-in-python-packages
 
+What does importing a module really mean?
+-----------------------------------------
 
-Adding ``my_downloader`` to sys.path
-------------------------------------
+.. note::
+
+   To keep us on track, let's assume that a **script** is a ``.py`` file
+   that you can run with ``python script.py``, a **module** is something you
+   can import, and a **package** is a specific kind of module consisting of
+   a directory with an ``__init__.py``. This is mostly correct for the purposes
+   of this discussion.
+
+You might have the understanding that scripts can import other scripts
+as modules alongside the ones you install with pip, and then access
+functions and classes from them. This mental model is generally correct.
+However, you may have made some assumptions about how modules are found.
+
+When running ``python -m my_downloader``, how does Python know where to
+find this ``my_downloader`` module? You might assume it always looks in the
+current working directory, but the exact answer is really `sys.path`_,
+a list of directories that Python searches when resolving imports.
+By using ``-m``, Python prepends your current working directory to sys.path,
+unlike say, ``python path/to/main.py`` which prepends the script's directory,
+``path/to/`` instead of your CWD. This is true for all absolute imports;
+how an absolute import like ``import matplotlib`` gets resolved in ``main.py``
+is no different from how it is resolved in ``seaborn/__init__.py``.
+What changes is the directories listed in sys.path, mainly based on your
+environment variables and how you run Python. It's a common mistake to
+assume that because ``foo.py`` and ``bar.py`` are next to each other,
+both of them can do ``import bar`` or ``import foo``, since in reality
+it depends on whether their parent directory is added to sys.path.
+That's why for local projects, it's important to organize and run your scripts
+in a consistent manner. For example, you might always put modules in a single
+directory, including your scripts, and then run them directly:
+
+.. _sys.path: https://docs.python.org/3/library/sys.html#sys.path
+
+.. code-block:: python
+   :force:
+
+    my_project/
+    └── app/
+        ├── cli/
+        │   ├── __init__.py
+        │   └── __main__.py
+        ├── layouts/
+        │   ├── __init__.py
+        │   └── ...
+        ├── parser/
+        │   ├── __init__.py
+        │   └── ...
+        ├── compile.py
+        │       from layouts import create_layout
+        │       from parser import Body, Footer, Header
+        ├── generate.py
+        └── validate.py
+
+.. code-block:: shell
+
+    /my_project $ python app/generate.py
+    /my_project $ python app/validate.py
+    /my_project $ python app/compile.py
+
+Or you'll organize all of your scripts into a package in your project root:
+
+.. code-block:: python
+   :force:
+
+    my_project/
+    └── my_package/
+        ├── sub_package/
+        │   └── __init__.py
+        │           from my_package import submodule
+        ├── __init__.py
+        │       from . import sub_package
+        ├── __main__.py
+        ├── migrate.py
+        └── submodule.py
+
+.. code-block:: shell
+
+    /my_project $ python -m my_package --help
+    /my_project $ python -m my_package.migrate foo.csv bar.csv
+
+However you organize your scripts, the one thing I recommend is setting your
+project root as the current working directory. ``cd`` ing around to run
+different scripts for one project is cumbersome, can unintentionally change
+your sys.path, and can be confusing for other users which have to contend with
+the same file structure and might assume by default that your project root
+is where they should run your commands from. However, if you think your way
+makes your project structure easier to work with, feel free to stick to it!
+As long as you document it for others (and perhaps your future self).
+But what if you want to use your module from anywhere in your terminal?
+Well now...
+
+Permanently adding modules to sys.path
+--------------------------------------
 
 Remember, ``python -m my_downloader`` worked in the previous examples because
 the current directory was ``/my_project`` and ``-m`` added it to ``sys.path``.
