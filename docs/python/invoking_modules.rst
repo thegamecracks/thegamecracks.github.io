@@ -74,9 +74,7 @@ a single directory:
 .. _package: https://docs.python.org/3/tutorial/modules.html#packages
 
 This way, all of your tool's scripts are contained in one directory
-and is easier to distribute to other systems. It also reduces the risk
-of files being overwritten when installed by pip, since packages get
-placed in a shared ``site-packages/`` directory with other package files.
+and is easier to distribute to other systems.
 
 How does -m play into this?
 ---------------------------
