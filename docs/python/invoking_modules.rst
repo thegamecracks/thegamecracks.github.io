@@ -269,10 +269,21 @@ Here's the bare minimum you need to make a distribution package:
 
 .. _setuptools + pyproject.toml: https://setuptools.pypa.io/en/latest/userguide/quickstart.html#basic-use
 
-This takes advantage of setuptools's automatic discovery to include the
-``my_downloader/`` package in the distribution. There are several other keys
-that can be written in the |project-table|_ table, but those two are the
-only required ones.
+There are several other keys that can be written in the |project-table|_ table,
+but those two are the only required ones.
+
+.. note::
+
+   See how we didn't say anything about ``my_downloader/`` in pyproject.toml?
+   This takes advantage of setuptools's `automatic discovery`_ to include the
+   ``my_downloader/`` package in the distribution. This won't work with all
+   layouts, and other build systems like `Hatch`_ and `Poetry`_ handle package
+   discovery differently.
+
+.. _automatic discovery: https://setuptools.pypa.io/en/latest/userguide/package_discovery.html#automatic-discovery
+.. _Hatch: https://hatch.pypa.io/latest/
+.. _Poetry: https://python-poetry.org/
+
 To build the |sdist|_ and |wheel|_ distribution files:
 
 .. code-block:: shell
