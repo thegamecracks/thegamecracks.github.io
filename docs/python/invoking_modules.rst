@@ -284,7 +284,7 @@ but those two are the only required ones.
 .. _Hatch: https://hatch.pypa.io/latest/
 .. _Poetry: https://python-poetry.org/
 
-To build the |sdist|_ and |wheel|_ distribution files:
+To build your |sdist|_ and |wheel|_ distribution files:
 
 .. code-block:: shell
 
