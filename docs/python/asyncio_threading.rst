@@ -200,9 +200,9 @@ to that instead:
 
 Keep in mind that the default thread pool executor has a maximum number
 of threads based on your processor's core count. As such, you **should not**
-use :py:func:`asyncio.to_thread()` to run long-lived tasks, as that can
-saturate the executor and reduce the number of workers available,
-or worse, indefinitely prevent new tasks from being processed.
+run long-lived tasks on the default executor as that reduces the number of
+workers available, or worse, saturate the executor and indefinitely prevent
+new tasks from being processed.
 
 Managing long-lived tasks
 -------------------------
