@@ -38,6 +38,7 @@ html_theme_options = {
     "repository_url": "https://github.com/thegamecracks/thegamecracks.github.io",
     "repository_branch": "master",
     "use_repository_button": True,
+    "use_download_button": False,
 }
 html_sidebars = {
     "blog/*": [
