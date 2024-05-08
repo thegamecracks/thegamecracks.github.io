@@ -155,11 +155,12 @@ What does importing a module really mean?
 
 .. note::
 
-   To keep us on track, let's assume that a **script** is a ``.py`` file
-   that you can run with ``python script.py``, a **module** is something you
-   can import, and a **package** is a specific kind of module consisting of
-   a directory with an ``__init__.py``. This is mostly correct for the purposes
-   of this discussion.
+   In case you're lost about the script / module / package terminology,
+   let's assume that (1) a **script** is a ``.py`` file you can run with
+   ``python script.py``, (2) a **module** is something you can import,
+   and (3) a **package** is a specific kind of module consisting of
+   a directory with an ``__init__.py``. This will be sufficient for the
+   following discussion.
 
 You might have the understanding that scripts can import other scripts
 as modules alongside the ones you install with pip, and then access
@@ -168,18 +169,25 @@ However, you may have made some assumptions about how modules are found.
 
 When running ``python -m my_downloader``, how does Python know where to
 find this ``my_downloader`` module? You might assume it always looks in the
-current working directory, but the exact answer is really `sys.path`_,
-a list of directories that Python searches when resolving imports.
-By using ``-m``, Python prepends your current working directory to sys.path,
-unlike say, ``python path/to/main.py`` which prepends the script's directory,
-``path/to/`` instead of your CWD. This is true for all absolute imports;
-how an absolute import like ``import matplotlib`` gets resolved in ``main.py``
-is no different from how it is resolved in ``seaborn/__init__.py``.
+current working directory, but this isn't true all the time. The exact answer is
+`sys.path`_, a list of directories that Python searches when resolving imports.
+The use of ``-m`` in ``python -m path.to.mod`` makes Python prepend your
+current working directory to sys.path, unlike say, ``python path/to/main.py``
+which prepends the script's directory, ``path/to/`` instead of your CWD.
+
+**All absolute imports rely on sys.path.**
+
+How an import like ``import matplotlib`` gets resolved in ``main.py``
+is no different from how it gets resolved in ``seaborn/__init__.py``.
 What changes is the directories listed in sys.path, mainly based on your
-environment variables and how you run Python. It's a common mistake to
-assume that because ``foo.py`` and ``bar.py`` are next to each other,
-both of them can do ``import bar`` or ``import foo``, since in reality
-it depends on whether their parent directory is added to sys.path.
+environment variables and how you run the Python interpreter.
+It's a common mistake to think that because ``pkg/foo.py`` and ``pkg/bar.py``
+are next to each other, both of them can do ``import bar`` or ``import foo``,
+since in reality it depends on whether their parent directory is in sys.path.
+If you ran foo.py using ``python -m pkg.foo``, the parent directory of ``pkg/``
+would be in sys.path rather than ``pkg/`` itself, and therefore the imports
+must be written as ``import pkg.foo`` or ``import pkg.bar``.
+
 That's why for local projects, it's important to organize and run your scripts
 in a consistent manner. For example, you might always put modules in a single
 directory, including your scripts, and then run them directly:
