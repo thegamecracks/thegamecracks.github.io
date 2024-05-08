@@ -28,6 +28,12 @@ blog_post_pattern = "posts/*.rst"
 post_date_format = "%Y %B %d"
 post_date_format_short = "%B %Y"
 
+# Configuration for intersphinx
+# https://www.sphinx-doc.org/en/master/usage/extensions/intersphinx.html
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+}
+
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
