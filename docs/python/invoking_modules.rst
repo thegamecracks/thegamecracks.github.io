@@ -315,7 +315,7 @@ Searching online, you'll find a dozen ways to invoke Python on the command-line
 (``python``, ``python3``, ``python3.11``, ``py``, etc.). Beginners to this
 (especially to the command-line) may not understand how these commands are
 provided by the `PATH`_ environment variable. If they take the shortest path
-through the `official installer`_, their system's PATH will not be updated
+through the `official installer`_, their system's PATH won't be updated
 to include ``python`` or any package entrypoints like |pip|_.
 However, the installer does include the `Python Launcher for Windows`_
 by default, providing the ``py`` command to invoke python. With ``py`` alone,
