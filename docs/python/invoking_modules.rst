@@ -88,6 +88,31 @@ a single directory:
 This way, all of your tool's scripts are contained in one directory
 and is easier to distribute to other systems.
 
+.. note::
+
+   *Wait, why would I upload my application onto PyPI? Isn't it only for
+   libraries? What if I want to keep my app private?*
+
+   Packages don't have to be limited to just libraries that users import.
+   PyPI is an easy way to distribute code to users, and that includes
+   applications too! `black`_, `mypy`_, `memray`_, and `pip`_ itself
+   are applications distributed through the Python Package Index.
+   Packages can also be a library and application at the same time,
+   like `pytest`_.
+
+   Of course, PyPI is a public index, and anyone will see your package.
+   Maybe you want to keep it private or you don't think it needs to be
+   on PyPI. In which case, you can still distribute and install your
+   packages in other ways, such as from `version control systems`_
+   or from `local projects`_.
+
+.. _black: https://black.readthedocs.io/
+.. _mypy: https://mypy.readthedocs.io/
+.. _memray: https://bloomberg.github.io/memray/
+.. _pytest: https://docs.pytest.org/
+.. _version control systems: https://pip.pypa.io/en/stable/topics/vcs-support/
+.. _local projects: https://pip.pypa.io/en/stable/topics/local-project-installs/
+
 How does -m play into this?
 ---------------------------
 
