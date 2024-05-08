@@ -3,6 +3,18 @@ Using ``python -m`` to invoke modules as scripts
 
 .. toctree::
 
+.. admonition:: Before you read...
+
+   This guide requires some pre-requisite knowledge of using Python.
+   If you can answer the following questions with at least some level
+   of confidence, you can continue ahead:
+
+   - What is a terminal? What can you use it for?
+   - What is a current working directory?
+   - How do you run Python scripts (``.py`` files) from the terminal?
+   - How do you make a Python script import another script?
+   - How do you install third-party packages with pip? How do you use them?
+
 You might have seen the ``-m`` flag used in various python commands online,
 or was told by someone else to use ``python -m`` to "run a module as a script",
 but didn't really understand what that meant. This gist covers how that flag
