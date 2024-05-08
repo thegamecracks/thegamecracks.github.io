@@ -182,11 +182,27 @@ method instead:
             fut.cancel()
         raise
 
+You could also create your own ThreadPoolExecutor and submit tasks
+to that instead:
+
+.. code-block:: python
+
+    async def main(executor: ThreadPoolExecutor):
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(executor, process_image, image)
+
+        # Above would be equivalent to writing:
+        await asyncio.wrap_future(executor.submit(process_image, image))
+
+
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        asyncio.run(main(executor))
+
 Keep in mind that the default thread pool executor has a maximum number
 of threads based on your processor's core count. As such, you **should not**
-use the above methods to run long-lived tasks, as that can saturate the
-executor and reduce the number of workers available, or worse, indefinitely
-prevent new tasks from being processed.
+use :py:func:`asyncio.to_thread()` to run long-lived tasks, as that can
+saturate the executor and reduce the number of workers available,
+or worse, indefinitely prevent new tasks from being processed.
 
 Managing long-lived tasks
 -------------------------
