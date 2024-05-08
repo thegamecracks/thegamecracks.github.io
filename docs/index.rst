@@ -9,6 +9,13 @@ Homepage
 Hi there! I'm currently experimenting with using **Sphinx** to collect
 my articles here.
 
+.. postlist:: 5
+   :excerpts:
+   :sort:
+
+Guides
+------
+
 .. toctree::
    :titlesonly:
 

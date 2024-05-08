@@ -1,2 +1,3 @@
+ablog>=0.11.10
 Sphinx>=7.3.7
 sphinx-book-theme>=1.1.2
