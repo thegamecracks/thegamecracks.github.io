@@ -306,6 +306,124 @@ However, if there were other tasks running at the same time:
    teardown results in improperly closed connections or half-written
    files.
 
+TODO
+
+Because of how asyncio depends on callbacks being non-blocking, the way you
+communicate messages from your worker thread back to the event loop has to
+be different from how you send messages to the worker thread. You can't just
+wait on a :py:class:`queue.Queue` in asyncio, as that would block the event loop!
+If only we had an asynchronous version of a queue to wait on...
+
+You probably already guessed where this is going. Yes, asyncio has it's own
+:py:class:`~asyncio.Queue` class. But you can see what it says in the docs:
+
+    This class is `not thread safe`_.
+
+.. _not thread safe: https://docs.python.org/3/library/asyncio-dev.html#asyncio-multithreading
+
+Oh no, it's not thread-safe! That means we can't put items into this queue
+from another thread, right? Actually, clicking the link in that text gives
+us the solution:
+
+    Almost all asyncio objects are not thread safe, which is typically not
+    a problem unless there is code that works with them from outside of a
+    Task or a callback. If there's a need for such code to call a low-level
+    asyncio API, the :py:meth:`loop.call_soon_threadsafe() <asyncio.loop.call_soon_threadsafe>`
+    method should be used, e.g.:
+
+    .. code-block:: python
+
+        loop.call_soon_threadsafe(fut.cancel)
+
+But what makes this method thread-safe compared to calling :py:meth:`queue.put_nowait() <asyncio.Queue.put_nowait>`
+directly? Well, this comes down to what an event loop is built on.
+You can guess from the name that there's a loop, but if you look at its
+`source code <https://github.com/python/cpython/blob/v3.12.3/Lib/asyncio/base_events.py#L1910-L1988>`_,
+you can see what it really does each iteration:
+
+.. code-block:: python
+
+    def _run_once(self):
+        """Run one full iteration of the event loop.
+
+        This calls all currently ready callbacks, polls for I/O,
+        schedules the resulting callbacks, and finally schedules
+        'call_later' callbacks.
+        """
+        ...
+        event_list = self._selector.select(timeout)
+        self._process_events(event_list)
+        ...
+        for i in range(ntodo):
+            handle = self._ready.popleft()
+            ...
+            handle._run()
+
+It **blocks** on this selector object waiting for events to come in,
+and then runs all callbacks scheduled for that iteration.
+How does that selector wait for events? The exact mechanism depends on the type
+of event loop that was created by asyncio, but by default, the :py:class:`~asyncio.DefaultEventLoopPolicy`
+returns a :py:class:`~asyncio.SelectorEventLoop` on Unix which uses the
+:py:mod:`selectors` module, and on Windows it returns a :py:class:`~asyncio.ProactorEventLoop`
+which uses Windows's `I/O Completion Ports`_ API. In either case, the operating
+system allows Python to wait on multiple data sources at once, whether it be
+network sockets or named pipes used in IPC.
+
+.. _I/O Completion Ports: https://learn.microsoft.com/en-ca/windows/win32/fileio/i-o-completion-ports
+
+So why does this matter to using ``asyncio.Queue`` from another thread?
+Well, you know how once you call a function that blocks, that thread can't
+do anything else? [#signals]_ For an event loop, the same issue exists too.
+If you were to call ``queue.put_nowait()`` from the worker thread while the
+event loop was waiting on an event, the item *would* get queued but nothing
+would happen because the event loop is still blocked on the selector.
+How does ``loop.call_soon_threadsafe()`` solve this issue? It schedules
+your callback to run on the event loop's thread, and sends one byte to a
+self-pipe which the selector is listening on:
+
+.. code-block:: python
+   :emphasize-lines: 6, 9
+
+    def call_soon_threadsafe(self, callback, *args, context=None):
+        """Like call_soon(), but thread-safe."""
+        self._check_closed()
+        if self._debug:
+            self._check_callback(callback, 'call_soon_threadsafe')
+        handle = self._call_soon(callback, args, context)
+        if handle._source_traceback:
+            del handle._source_traceback[-1]
+        self._write_to_self()
+        return handle
+
+That wakes up the event loop immediately, allowing it to run the callback
+you passed to the method along with anything else that was scheduled.
+If we were to pass ``queue.put_nowait`` as our callback, that would enqueue
+our item for us and wake up the first task waiting on ``queue.get()``,
+enqueuing the task to resume in the next iteration of the event loop.
+So that's everything we need! Let's put that method into practice:
+
+.. code-block:: python
+
+    TODO
+
+.. note::
+
+    *Hey, what about* ``queue.put()`` *? Can I pass that as a callback too?*
+
+    From asyncio's perspective, callbacks just mean synchronous functions.
+    :py:meth:`queue.put() <asyncio.Queue.put>` returns a coroutine object,
+    and the event loop doesn't actually know how to run a coroutine object
+    by itself. That's what an :py:class:`asyncio.Task` is for; it knows how
+    to turn the "steps" in a coroutine into callbacks, and schedule them on
+    the event loop.
+
+    There's more to investigate here about how futures bridge the event loop's
+    low-level callbacks with our high-level, async/await coroutines, but I
+    won't discuss it in this guide. Just know that there's a separate function
+    for scheduling coroutines from other threads, :py:func:`asyncio.run_coroutine_threadsafe()`,
+    which has the handy feature of returning a :py:class:`concurrent.futures.Future`
+    that lets you wait on the coroutine's result from another thread.
+
 Running event loops in other threads
 ------------------------------------
 
@@ -314,3 +432,9 @@ Running event loops in other threads
 In the previous sections I discussed, but what if you have a synchronous
 program that you can't migrate to asyncio, but you still need to run
 asynchronous code inside it?
+
+.. rubric:: Footnotes
+
+.. [#signals]
+   :py:mod:`Signals <signal>` can interrupt threads, but in Python only
+   the main thread runs signal handlers, so it won't work here for IPC.
