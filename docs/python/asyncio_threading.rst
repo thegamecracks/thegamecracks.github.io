@@ -227,6 +227,74 @@ thread? And how do you make sure the thread closes alongside your
 event loop? Well, this is where you should have a decent understanding
 of thread-safety as it relates to asyncio.
 
+Let's start with inter-thread communication in the form of queues and messages
+because it's a versatile design to use. How would we typically use a queue
+in a synchronous program that processes images in the background?
+Well, it might look like this:
+
+.. code-block:: python
+
+    import threading
+    from queue import Queue
+
+    class ImageProcessor:
+        def __init__(self) -> None:
+            self.queue: Queue[bytes | None] = Queue()
+            self._thread: threading.Thread | None = None
+
+        def __enter__(self):
+            self._thread = threading.Thread(target=self.run_forever)
+            self._thread.start()
+            return self
+
+        def __exit__(self, exc_type, exc_val, tb):
+            if self._thread is not None:
+                self.queue.put(None)
+                self._thread.join()
+
+        def run_forever(self):
+            while True:
+                item = self.queue.get()
+                if item is None:
+                    break
+                # Do some processing with the given image bytes...
+
+        def submit(self, image_bytes: bytes):
+            self.queue.put(image_bytes)
+
+    with ImageProcessor() as worker:
+        worker.submit(b"some image bytes")
+
+Here, we instantiate the queue object in the **main thread** and then start
+the worker thread from our context manager, which blocks on the queue until
+items are submitted to it. The thread knows to stop when it receives a ``None``
+sentinel value marking the end of subsequent jobs.
+
+How do we translate this to asyncio? Let's start with the simplest option,
+which is using the same code:
+
+.. code-block:: python
+
+    async def main():
+        with ImageProcessor() as worker:
+            worker.submit(b"some image bytes")
+            await do_something_else()
+
+    asyncio.run(main())
+
+And for a simple script like this, you won't notice any issues with it!
+That's because we only have one task in our event loop, the main task.
+If ``do_something_else()`` were to receive an :py:class:`asyncio.CancelledError`,
+perhaps caused by a keyboard interrupt, the context manager would tell
+the worker to shut down and join the thread, freezing the event loop
+during that period. The main task was the only thing running anyway,
+so nothing else got blocked.
+However, if there were other tasks running at the same time:
+
+.. code-block:: python
+
+    TODO
+
 (insert paragraph about handling thread closure)
 
 .. warning::
