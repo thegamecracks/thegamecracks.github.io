@@ -237,7 +237,7 @@ Permanently adding modules to sys.path
 
 Remember, ``python -m my_downloader`` worked in the previous examples because
 the current directory was ``/my_project`` and ``-m`` added it to ``sys.path``.
-If you were to change to another directory, the ``my_downloader`` would no
+If you were to change to another directory, ``my_downloader`` would no
 longer be resolvable. This is one of the reasons why we have pip - it lets us
 install packages to a common place, ``site-packages/``, that Python always
 knows to search for modules [#site]_ regardless of our current working directory.
