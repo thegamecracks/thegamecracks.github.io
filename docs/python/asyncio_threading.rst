@@ -227,6 +227,17 @@ thread? And how do you make sure the thread closes alongside your
 event loop? Well, this is where you should have a decent understanding
 of thread-safety as it relates to asyncio.
 
+(insert paragraph about handling thread closure)
+
+.. warning::
+
+   For threads that handle I/O or otherwise anything that should be
+   cleaned up upon exiting, please refrain from using ``daemon=True``.
+   Yes, it means you don't have to deal with checking when to stop,
+   but it also makes your program prone to breaking when some missed
+   teardown results in improperly closed connections or half-written
+   files.
+
 Running event loops in other threads
 ------------------------------------
 
