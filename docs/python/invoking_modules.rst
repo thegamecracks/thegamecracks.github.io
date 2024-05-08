@@ -150,8 +150,9 @@ longer be resolvable. This is one of the reasons why we have pip - it lets us
 install packages to a common place, ``site-packages/``, that Python always
 knows to search for modules [#site]_ regardless of our current working directory.
 However we're not there yet, as pip can't just install any plain old package.
-It needs to be packaged into a distribution first. For this, I recommend looking
-into `setuptools + pyproject.toml`_ for writing your build configuration.
+It needs to be packaged into a distribution that pip knows how to install.
+For this, I recommend looking into `setuptools + pyproject.toml`_ for writing
+your build configuration.
 Here's the bare minimum you need to make a distribution package:
 
 .. code-block:: python
