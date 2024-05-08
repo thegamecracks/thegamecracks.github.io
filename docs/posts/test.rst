@@ -8,7 +8,7 @@ Test Post
 Hey, this here is a post presented by `ablog`_. I don't plan to post anything
 right now, but it looks neat!
 
-.. _ablog: https://ablog.readthedocs.io/en/stable/index.html
+.. _ablog: https://ablog.readthedocs.io/
 
 I accidentally found this extension while browsing through `sphinx-book-theme`_'s
 documentation. I would've just wrote posts like my other two guides,
@@ -21,7 +21,7 @@ and `joblin`_ packages, but this seemed more pleasant for reading.
 You can tell I haven't looked at `matplotlib`_ or `pandas`_'s documentation
 often enough to recognize the similarities. 🙃
 
-.. _sphinx-book-theme: https://sphinx-book-theme.readthedocs.io/en/stable/index.html
+.. _sphinx-book-theme: https://sphinx-book-theme.readthedocs.io/
 .. _sphinx-themes.org: https://sphinx-themes.org/
 .. _Furo: https://pradyunsg.me/furo/customisation/
 .. _discord-ws: https://thegamecracks.github.io/discord-ws/
