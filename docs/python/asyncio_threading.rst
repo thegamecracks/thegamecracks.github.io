@@ -443,11 +443,62 @@ you passed to the method along with anything else that was scheduled.
 If we were to pass ``queue.put_nowait`` as our callback, that would enqueue
 our item for us and wake up the first task waiting on ``queue.get()``,
 enqueuing the task to resume in the next iteration of the event loop.
-So that's everything we need! Let's put that method into practice:
+So that's everything we need! Let's put that method into practice.
+We can add a way to register callbacks on our worker that run when an item
+has finished processing:
+
+.. code-block:: python
+   :emphasize-lines: 21-22
+
+    from typing import Callable
+
+    ImageProcessorCallback = Callable[[bytes], object]
+
+    class ImageProcessor:
+        def __init__(self) -> None:
+            self._queue: Queue[bytes | None] = Queue()
+            self._thread: threading.Thread | None = None
+            self._callbacks: list[ImageProcessorCallback] = []
+
+        def __enter__(self):
+            self._thread = threading.Thread(target=self.run_forever)
+            self._thread.start()
+            return self
+
+        def __exit__(self, exc_type, exc_val, tb):
+            if self._thread is not None:
+                self._queue.put(None)
+                self._thread.join()
+
+        def add_done_callback(self, callback: ImageProcessorCallback):
+            self._callbacks.append(callback)
+
+        def run_forever(self):
+            while True:
+                item = self._queue.get()
+                if item is None:
+                    break
+                # Do some processing with the given image bytes...
+                for callback in self._callbacks:
+                    callback(result)
+
+        def submit(self, image_bytes: bytes):
+            self._queue.put(image_bytes)
+
+And then use it to redirect results to an asynchronous queue:
 
 .. code-block:: python
 
-    TODO
+    async def main(worker: ImageProcessor):
+        loop = asyncio.get_running_loop()
+        queue: asyncio.Queue[bytes] = asyncio.Queue()
+        worker.add_done_callback(
+            lambda result: loop.call_soon_threadsafe(queue.put_nowait, result)
+        )
+
+        worker.submit(b"some image bytes")
+        result = await queue.get()
+        print("processed image bytes:", result)
 
 .. note::
 
