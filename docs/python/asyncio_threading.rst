@@ -343,10 +343,11 @@ which is to construct our image processor before starting the event loop:
 Now if an error occurs, our event loop is able to run all remaining coroutines
 and shut down before our worker blocks and shuts down.
 
-*But what if I want to create workers on the fly?*
-That's a fair point, we haven't solved the problem of managing threads
-from inside the event loop. To do that, we'll need to know how to send
-events from the worker to the event loop first.
+*What if I want to create workers on the fly?*
+
+Right, we didn't really solve the problem of managing threads from inside the
+event loop. To do that, we'll need to know how to send events from the worker
+to the event loop first.
 
 Because of how asyncio depends on callbacks being non-blocking, the way you
 communicate messages from your worker thread back to the event loop has to
