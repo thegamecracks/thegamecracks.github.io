@@ -375,11 +375,14 @@ us the solution:
 
         loop.call_soon_threadsafe(fut.cancel)
 
+Okay, so this method is how we can call methods of asyncio objects from
+other threads.
+
 But what makes this method thread-safe compared to calling :py:meth:`queue.put_nowait() <asyncio.Queue.put_nowait>`
-directly? Well, this comes down to what an event loop is built on.
+directly? Well, this comes down to what an event loop really does.
 You can guess from the name that there's a loop, but if you look at its
 `source code <https://github.com/python/cpython/blob/v3.12.3/Lib/asyncio/base_events.py#L1910-L1988>`_,
-you can see what it really does each iteration:
+you can see what happens in each iteration:
 
 .. code-block:: python
 
@@ -405,9 +408,9 @@ How does that selector wait for events? The exact mechanism depends on the type
 of event loop that was created by asyncio, but by default, the :py:class:`~asyncio.DefaultEventLoopPolicy`
 returns a :py:class:`~asyncio.SelectorEventLoop` on Unix which uses the
 :py:mod:`selectors` module, and on Windows it returns a :py:class:`~asyncio.ProactorEventLoop`
-which uses Windows's `I/O Completion Ports`_ API. In either case, the operating
-system allows Python to wait on multiple data sources at once, whether it be
-network sockets or named pipes used in IPC.
+which uses Windows's `I/O Completion Ports`_. In either case, Python will use
+the operating system's APIs to wait on multiple data sources at once, whether
+it be network sockets, or named pipes used in IPC.
 
 .. _I/O Completion Ports: https://learn.microsoft.com/en-ca/windows/win32/fileio/i-o-completion-ports
 
