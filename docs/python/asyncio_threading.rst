@@ -498,8 +498,8 @@ And then use it to redirect results to an asynchronous queue:
         result = await queue.get()
         print("processed image bytes:", result)
 
-And there you go! This uses a thread-safe queue and callbacks in a
-non-blocking manner to communicate events between both threads at once.
+And there you go! This uses a thread-safe queue and non-blocking callbacks
+to communicate events between both threads at once.
 We can wrap it up in another class to make this interaction simpler:
 
 .. code-block:: python
