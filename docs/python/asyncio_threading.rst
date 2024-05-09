@@ -183,7 +183,7 @@ method instead:
         raise
 
 You could also create your own ThreadPoolExecutor and submit tasks
-to that instead:
+to that:
 
 .. code-block:: python
 
