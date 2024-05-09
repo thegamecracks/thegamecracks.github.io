@@ -986,7 +986,8 @@ Let's replace our ``_event`` and ``_loop`` attributes with a single
         def _set_event_loop(self):
             self._loop_fut.set_result(asyncio.get_running_loop())
 
-We can also go one step further and replace ``_stop_ev`` with a stop future:
+See how nice it works? We can also go one step further and replace ``_stop_ev``
+with a stop future:
 
 .. code-block:: python
     :emphasize-lines: 8, 18, 29
