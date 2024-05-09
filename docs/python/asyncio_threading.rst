@@ -510,7 +510,7 @@ And then use it to redirect results to an asynchronous queue:
     the event loop.
 
     There's more to investigate here about how futures bridge the event loop's
-    low-level callbacks with our high-level, async/await coroutines, but I
+    low-level callbacks with high-level async/await coroutines, but I
     won't discuss it in this guide. Just know that there's a separate function
     for scheduling coroutines from other threads, :py:func:`~asyncio.run_coroutine_threadsafe()`,
     which has the handy feature of returning a :py:class:`concurrent.futures.Future`
