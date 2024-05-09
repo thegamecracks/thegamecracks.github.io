@@ -241,14 +241,20 @@ Well, it might look like this:
             self._thread: threading.Thread | None = None
 
         def __enter__(self):
-            self._thread = threading.Thread(target=self.run_forever)
-            self._thread.start()
+            self.start()
             return self
 
         def __exit__(self, exc_type, exc_val, tb):
-            if self._thread is not None:
-                self._queue.put(None)
-                self._thread.join()
+            assert self._thread is not None
+            self.stop()
+            self._thread.join()
+
+        def start(self):
+            self._thread = threading.Thread(target=self.run_forever)
+            self._thread.start()
+
+        def stop(self):
+            self._queue.put(None)
 
         def run_forever(self):
             while True:
@@ -256,6 +262,7 @@ Well, it might look like this:
                 if item is None:
                     break
                 # Do some processing with the given image bytes...
+                result = b"processed " + item
 
         def submit(self, image_bytes: bytes):
             self._queue.put(image_bytes)
@@ -443,7 +450,7 @@ We can add a way to register callbacks on our worker that run when an item
 has finished processing:
 
 .. code-block:: python
-    :emphasize-lines: 9, 21-22, 30-31
+    :emphasize-lines: 9, 27-28, 36-37
 
     from typing import Callable
 
@@ -456,14 +463,20 @@ has finished processing:
             self._callbacks: list[ImageProcessorCallback] = []
 
         def __enter__(self):
-            self._thread = threading.Thread(target=self.run_forever)
-            self._thread.start()
+            self.start()
             return self
 
         def __exit__(self, exc_type, exc_val, tb):
-            if self._thread is not None:
-                self._queue.put(None)
-                self._thread.join()
+            assert self._thread is not None
+            self.stop()
+            self._thread.join()
+
+        def start(self):
+            self._thread = threading.Thread(target=self.run_forever)
+            self._thread.start()
+
+        def stop(self):
+            self._queue.put(None)
 
         def add_done_callback(self, callback: ImageProcessorCallback):
             self._callbacks.append(callback)
@@ -473,7 +486,7 @@ has finished processing:
                 item = self._queue.get()
                 if item is None:
                     break
-                # Do some processing with the given image bytes...
+                result = b"processed " + item
                 for callback in self._callbacks:
                     callback(result)
 
@@ -553,6 +566,124 @@ We can wrap it up in another class to make this interaction simpler:
     for scheduling coroutines from other threads, :py:func:`~asyncio.run_coroutine_threadsafe()`,
     which has the handy feature of returning a :py:class:`concurrent.futures.Future`
     that lets you wait on the coroutine's result from another thread.
+
+There's just one thing left that I didn't answer:
+*What if I want to create workers on the fly?*
+Or in other words, *how do I manage worker threads inside the event loop?*
+
+Now that we know how to send events to the event loop from worker threads,
+how would you modify the above classes so it can asynchronously start and
+stop the worker inside ``main()``, using ``async with`` syntax?
+When implemented, its usage should look like:
+
+.. code-block:: python
+
+    async def main():
+        tasks = []
+        async with AsyncImageProcessor() as worker, asyncio.TaskGroup() as tg:
+            for i in range(5):
+                image = f"image {i}".encode()
+                task = tg.create_task(worker.submit(image))
+                tasks.append(task)
+
+            for task in asyncio.as_completed(tasks):
+                print(await task)
+
+    asyncio.run(main())
+
+If you want to look now, here's a way of solving it:
+
+.. raw:: html
+
+    <details>
+    <summary>Solution</summary>
+
+.. code-block:: python
+    :emphasize-lines: 2, 9, 30-31, 42-43, 55-56, 58-63, 65-68, 73-74
+
+    ImageProcessorCallback = Callable[[bytes], object]
+    ImageProcessorStopCallback = Callable[[], object]
+
+    class ImageProcessor:
+        def __init__(self) -> None:
+            self._queue: Queue[bytes | None] = Queue()
+            self._thread: threading.Thread | None = None
+            self._callbacks: list[ImageProcessorCallback] = []
+            self._stop_callbacks: list[ImageProcessorStopCallback] = []
+
+        def __enter__(self):
+            self.start()
+            return self
+
+        def __exit__(self, exc_type, exc_val, tb):
+            assert self._thread is not None
+            self.stop()
+            self._thread.join()
+
+        def start(self):
+            self._thread = threading.Thread(target=self.run_forever)
+            self._thread.start()
+
+        def stop(self):
+            self._queue.put(None)
+
+        def add_done_callback(self, callback: ImageProcessorCallback):
+            self._callbacks.append(callback)
+
+        def add_stop_callback(self, callback: ImageProcessorStopCallback):
+            self._stop_callbacks.append(callback)
+
+        def run_forever(self):
+            while True:
+                item = self._queue.get()
+                if item is None:
+                    break
+                result = b"processed " + item
+                for callback in self._callbacks:
+                    callback(result)
+
+            for callback in self._stop_callbacks:
+                callback()
+
+        def submit(self, image_bytes: bytes):
+            self._queue.put(image_bytes)
+
+
+    class AsyncImageProcessor:
+        def __init__(self, factory: Callable[[], ImageProcessor] = ImageProcessor):
+            self.factory = factory
+
+            self._queue: asyncio.Queue[bytes] = asyncio.Queue()
+            self._loop = asyncio.get_running_loop()
+            self._worker: ImageProcessor | None = None
+            self._stop_ev = asyncio.Event()
+
+        async def __aenter__(self):
+            self._worker = self.factory()
+            self._worker.add_done_callback(self._on_item_processed)
+            self._worker.add_stop_callback(self._on_stop)
+            self._worker.start()
+            return self
+
+        async def __aexit__(self, exc_type, exc_val, tb):
+            assert self._worker is not None
+            self._worker.stop()
+            await self._stop_ev.wait()
+
+        def _on_item_processed(self, result: bytes):
+            self._loop.call_soon_threadsafe(self._queue.put_nowait, result)
+
+        def _on_stop(self):
+            self._loop.call_soon_threadsafe(self._stop_ev.set)
+
+        async def submit(self, item: bytes) -> bytes:
+            assert self._worker is not None
+            self._worker.submit(item)
+            return await self._queue.get()
+
+.. raw:: html
+
+    </details>
 
 Running event loops in other threads
 ------------------------------------
