@@ -185,8 +185,6 @@ method instead:
 You could also create your own ThreadPoolExecutor and submit tasks
 to that:
 
-.. _pass-executor-to-asyncio:
-
 .. code-block:: python
 
     async def main(executor: ThreadPoolExecutor):
@@ -323,8 +321,8 @@ doesn't have a max size set, it's effectively non-blocking.
 So what do we do about it? Actually, not a lot is needed to avoid this problem.
 Because ``worker.submit()`` doesn't need to be changed, the only problem we
 have is shutting down the worker thread. To fix that, we just need to do the
-same thing in the previous `ThreadPoolExecutor example <pass-executor-to-asyncio_>`_,
-which is to construct our image processor before starting the event loop:
+same thing in the previous ThreadPoolExecutor example, which is to construct
+our image processor before starting the event loop:
 
 .. code-block:: python
 
