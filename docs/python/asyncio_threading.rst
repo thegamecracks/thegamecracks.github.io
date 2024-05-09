@@ -842,9 +842,9 @@ and let us submit any coroutine to it! 🎉
 Refactoring our EventThread class
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Before I end this guide, I want to suggest some improvements to this class.
-For one, the ``start()`` and ``stop()`` methods should be turned into a
-context manager so it's harder to accidentally leave it unclosed.
+We're nearing the end of this guide, but I want to suggest some improvements
+to this class. For one, the ``start()`` and ``stop()`` methods should be
+turned into a context manager so it's harder to accidentally leave it unclosed.
 It could also use a ``submit()`` method that handles calling
 ``asyncio.run_coroutine_threadsafe()`` for us.
 But I want to talk about the more interesting topic, futures.
