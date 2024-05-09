@@ -241,7 +241,7 @@ Well, it might look like this:
 
     class ImageProcessor:
         def __init__(self) -> None:
-            self.queue: Queue[bytes | None] = Queue()
+            self._queue: Queue[bytes | None] = Queue()
             self._thread: threading.Thread | None = None
 
         def __enter__(self):
@@ -251,18 +251,18 @@ Well, it might look like this:
 
         def __exit__(self, exc_type, exc_val, tb):
             if self._thread is not None:
-                self.queue.put(None)
+                self._queue.put(None)
                 self._thread.join()
 
         def run_forever(self):
             while True:
-                item = self.queue.get()
+                item = self._queue.get()
                 if item is None:
                     break
                 # Do some processing with the given image bytes...
 
         def submit(self, image_bytes: bytes):
-            self.queue.put(image_bytes)
+            self._queue.put(image_bytes)
 
     with ImageProcessor() as worker:
         worker.submit(b"some image bytes")
