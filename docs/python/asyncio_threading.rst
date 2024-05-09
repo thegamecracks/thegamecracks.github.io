@@ -498,6 +498,47 @@ And then use it to redirect results to an asynchronous queue:
         result = await queue.get()
         print("processed image bytes:", result)
 
+And there you go! This uses a thread-safe queue and callbacks in a
+non-blocking manner to communicate events between both threads at once.
+We can wrap it up in another class to make this interaction simpler:
+
+.. code-block:: python
+
+    class AsyncImageProcessor:
+        def __init__(self, worker: ImageProcessor):
+            self._worker = worker
+            self._queue: asyncio.Queue[bytes] = asyncio.Queue()
+            self._loop = asyncio.get_running_loop()
+            self._worker.add_done_callback(self._on_item_processed)
+
+        def _on_item_processed(self, result: bytes):
+            self._loop.call_soon_threadsafe(self._queue.put_nowait, result)
+
+        async def submit(self, item: bytes) -> bytes:
+            self._worker.submit(item)
+            return await self._queue.get()
+
+        # Because the worker processes items sequentially and queue.get()
+        # wakes up waiters in FIFO order, our results will be in the same order.
+        # This would stop being true if items could be returned out of order.
+        #
+        # The callback could also use something besides an asyncio.Queue to
+        # store results and notify waiters, like a mapping of IDs to futures,
+        # if the ImageProcessor class could return ancillary data.
+
+
+    async def main(sync_worker: ImageProcessor):
+        worker = AsyncImageProcessor(sync_worker)
+        tasks = []
+        async with asyncio.TaskGroup() as tg:
+            for i in range(5):
+                image = f"image {i}".encode()
+                task = tg.create_task(worker.submit(image))
+                tasks.append(task)
+
+            for task in asyncio.as_completed(tasks):
+                print(await task)
+
 .. note::
 
     *Hey, what about* ``queue.put()`` *? Can I pass that as a callback too?*
