@@ -443,7 +443,7 @@ We can add a way to register callbacks on our worker that run when an item
 has finished processing:
 
 .. code-block:: python
-    :emphasize-lines: 21-22
+    :emphasize-lines: 9, 21-22, 30-31
 
     from typing import Callable
 
