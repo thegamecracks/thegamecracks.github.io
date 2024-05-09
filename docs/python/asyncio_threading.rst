@@ -211,8 +211,8 @@ Managing long-lived tasks
 
 .. warning:: This section is currently a work-in-progress.
 
-What do you do to thread long-lived tasks then? It's simple! Thread them
-as you normally would in a synchronous program.
+What do you do to run long-lived tasks in threads then? It's simple!
+Thread them as you normally would in a synchronous program:
 
 .. code-block:: python
 
@@ -230,7 +230,7 @@ event loop? Well, this is where you should have a decent understanding
 of thread-safety as it relates to asyncio.
 
 Let's start with inter-thread communication in the form of queues and messages
-because it's a versatile design to use. How would we typically use a queue
+because it's a versatile design pattern. How would we typically use a queue
 in a synchronous program that processes images in the background?
 Well, it might look like this:
 
@@ -270,7 +270,7 @@ Well, it might look like this:
 Here, we instantiate the queue object in the **main thread** and then start
 the worker thread from our context manager, which blocks on the queue until
 items are submitted to it. The thread knows to stop when it receives a ``None``
-sentinel value marking the end of subsequent jobs.
+sentinel value upon exiting the context manager.
 
 .. warning::
 
@@ -279,12 +279,12 @@ sentinel value marking the end of subsequent jobs.
    and starting your thread without joining it.
 
    Yes, it means you don't have to deal with checking when to stop,
-   but it also makes your program prone to breaking when some missed
-   teardown results in improperly closed connections or half-written
-   files.
+   but it also makes your program prone to breaking in obscure ways
+   when some missed teardown results in improperly closed connections
+   or half-written files.
 
 How do we translate this to asyncio? Let's start with the simplest option,
-which is using the same code:
+which is using the same code in a coroutine:
 
 .. code-block:: python
 
@@ -295,7 +295,7 @@ which is using the same code:
 
     asyncio.run(main())
 
-And for a simple script like this, you won't notice any issues with it!
+For a simple script like this, you won't notice any issues with it!
 That's because we only have one task in our event loop, the main task.
 If ``do_something_else()`` were to receive an :py:class:`asyncio.CancelledError`,
 perhaps caused by a keyboard interrupt, the context manager would tell
@@ -322,11 +322,11 @@ make it much more confusing to reason about the thread's lifetime.
 It's also worth noting that ``queue.put()`` can also block, but since the queue
 doesn't have a max size set, it's effectively non-blocking.
 
-Actually, the fact that ``put()`` doesn't need to block makes this class
-a potentially viable option! The only problem we have here is shutting down
-the worker thread. We can mitigate this by doing the same thing in the previous
-`ThreadPoolExecutor example <pass-executor-to-asyncio_>`_, which is to construct
-our image processor before starting the event loop:
+So what do we do about it? Actually, not a lot is needed to avoid this problem.
+Because ``worker.submit()`` doesn't need to be changed, the only problem we
+have is shutting down the worker thread. To fix that, we just need to do the
+same thing in the previous `ThreadPoolExecutor example <pass-executor-to-asyncio_>`_,
+which is to construct our image processor before starting the event loop:
 
 .. code-block:: python
 
@@ -361,9 +361,9 @@ You probably already guessed where this is going. Yes, asyncio has it's own
 
 .. _not thread safe: https://docs.python.org/3/library/asyncio-dev.html#asyncio-multithreading
 
-Oh no, it's not thread-safe! That means we can't put items into this queue
-from another thread, right? Actually, clicking the link in that text gives
-us the solution:
+Oh no, it's not thread-safe! That means we can't put items from another thread,
+right? Actually, clicking the link in that text says we can, but not
+by putting items from the thread directly:
 
     Almost all asyncio objects are not thread safe, which is typically not
     a problem unless there is code that works with them from outside of a
@@ -404,24 +404,22 @@ you can see what happens in each iteration:
 
 It **blocks** on this selector object waiting for events to come in,
 and then runs all callbacks scheduled for that iteration.
-How does that selector wait for events? The exact mechanism depends on the type
-of event loop that was created by asyncio, but by default, the :py:class:`~asyncio.DefaultEventLoopPolicy`
-returns a :py:class:`~asyncio.SelectorEventLoop` on Unix which uses the
-:py:mod:`selectors` module, and on Windows it returns a :py:class:`~asyncio.ProactorEventLoop`
-which uses Windows's `I/O Completion Ports`_. In either case, Python will use
-the operating system's APIs to wait on multiple data sources at once, whether
-it be network sockets, or named pipes used in IPC.
+How the selector waits for events will depend on the type of event loop
+that was created by asyncio, but by default, the :py:class:`~asyncio.DefaultEventLoopPolicy`
+uses the :py:mod:`selectors` module on Unix, and `I/O Completion Ports`_ on Windows.
+Both of them interface with the operating system's APIs to wait on multiple
+data sources at once, whether it be network sockets, or named pipes used in IPC.
 
 .. _I/O Completion Ports: https://learn.microsoft.com/en-ca/windows/win32/fileio/i-o-completion-ports
 
-So why does this matter to using ``asyncio.Queue`` from another thread?
+Why does this matter to using ``asyncio.Queue`` from another thread?
 Well, you know how once a thread calls a function that blocks, that thread can't
 do anything else? [#signals]_ For an event loop, the same issue exists too.
 If you were to call ``queue.put_nowait()`` from the worker thread while the
 event loop was waiting on an event, the item *would* get queued but nothing
 would happen because the event loop is still blocked on the selector.
-How does ``loop.call_soon_threadsafe()`` solve this issue? It schedules
-your callback to run on the event loop's thread, and sends one byte to a
+How does ``loop.call_soon_threadsafe()`` solve this issue? It schedules your
+callback to run on the event loop's thread, and then sends one byte to a
 self-pipe which the selector is listening on:
 
 .. code-block:: python
@@ -438,11 +436,11 @@ self-pipe which the selector is listening on:
         self._write_to_self()
         return handle
 
-That wakes up the event loop immediately, allowing it to run the callback
+That wakes up the event loop, allowing it to run the callback
 you passed to the method along with anything else that was scheduled.
 If we were to pass ``queue.put_nowait`` as our callback, that would enqueue
 our item for us and wake up the first task waiting on ``queue.get()``,
-enqueuing the task to resume in the next iteration of the event loop.
+scheduling the task to resume in the next iteration of the event loop.
 So that's everything we need! Let's put that method into practice.
 We can add a way to register callbacks on our worker that run when an item
 has finished processing:
@@ -514,7 +512,7 @@ And then use it to redirect results to an asynchronous queue:
     There's more to investigate here about how futures bridge the event loop's
     low-level callbacks with our high-level, async/await coroutines, but I
     won't discuss it in this guide. Just know that there's a separate function
-    for scheduling coroutines from other threads, :py:func:`asyncio.run_coroutine_threadsafe()`,
+    for scheduling coroutines from other threads, :py:func:`~asyncio.run_coroutine_threadsafe()`,
     which has the handy feature of returning a :py:class:`concurrent.futures.Future`
     that lets you wait on the coroutine's result from another thread.
 
