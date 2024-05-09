@@ -273,7 +273,9 @@ sentinel value marking the end of subsequent jobs.
 .. warning::
 
    For threads that handle I/O or otherwise anything that should be
-   cleaned up upon exiting, please refrain from using ``daemon=True``.
+   cleaned up upon exiting, please refrain from using ``daemon=True``
+   and starting your thread without joining it.
+
    Yes, it means you don't have to deal with checking when to stop,
    but it also makes your program prone to breaking when some missed
    teardown results in improperly closed connections or half-written
