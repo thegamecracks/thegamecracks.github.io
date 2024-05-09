@@ -293,7 +293,20 @@ However, if there were other tasks running at the same time:
 
 .. code-block:: python
 
-    TODO
+    async def main():
+        async with asyncio.TaskGroup() as tg:
+            tg.create_task(do_something_else())
+
+            with ImageProcessor() as worker:
+                worker.submit(b"some image bytes")
+                raise Exception("Houston, we have a problem!")
+
+Then when exiting the worker, it would block the event loop until the remaining
+image was processed, preventing ``do_something_else()`` from running during
+that period. We could remove the ``_thread.join()`` call, but that would
+make it much more confusing to reason about the thread's lifetime.
+It's also worth noting that ``queue.put()`` can also block, but since the queue
+doesn't have a max size set, it doesn't apply here.
 
 (insert paragraph about handling thread closure)
 
