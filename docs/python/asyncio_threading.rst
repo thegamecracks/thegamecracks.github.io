@@ -270,6 +270,15 @@ the worker thread from our context manager, which blocks on the queue until
 items are submitted to it. The thread knows to stop when it receives a ``None``
 sentinel value marking the end of subsequent jobs.
 
+.. warning::
+
+   For threads that handle I/O or otherwise anything that should be
+   cleaned up upon exiting, please refrain from using ``daemon=True``.
+   Yes, it means you don't have to deal with checking when to stop,
+   but it also makes your program prone to breaking when some missed
+   teardown results in improperly closed connections or half-written
+   files.
+
 How do we translate this to asyncio? Let's start with the simplest option,
 which is using the same code:
 
@@ -307,17 +316,6 @@ that period. We could remove the ``_thread.join()`` call, but that would
 make it much more confusing to reason about the thread's lifetime.
 It's also worth noting that ``queue.put()`` can also block, but since the queue
 doesn't have a max size set, it doesn't apply here.
-
-(insert paragraph about handling thread closure)
-
-.. warning::
-
-   For threads that handle I/O or otherwise anything that should be
-   cleaned up upon exiting, please refrain from using ``daemon=True``.
-   Yes, it means you don't have to deal with checking when to stop,
-   but it also makes your program prone to breaking when some missed
-   teardown results in improperly closed connections or half-written
-   files.
 
 TODO
 
