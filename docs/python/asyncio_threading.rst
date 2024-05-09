@@ -328,7 +328,7 @@ wait on a :py:class:`queue.Queue` in asyncio, as that would block the event loop
 If only we had an asynchronous version of a queue to wait on...
 
 You probably already guessed where this is going. Yes, asyncio has it's own
-:py:class:`~asyncio.Queue` class. But you can see what it says in the docs:
+:py:class:`~asyncio.Queue` class! But you can see what it says in the docs:
 
     This class is `not thread safe`_.
 
