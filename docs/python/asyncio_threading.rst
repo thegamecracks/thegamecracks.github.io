@@ -199,10 +199,10 @@ to that instead:
         asyncio.run(main(executor))
 
 Keep in mind that the default thread pool executor has a maximum number
-of threads based on your processor's core count. As such, you **should not**
-run long-lived tasks on the default executor as that reduces the number of
-workers available, or worse, saturate the executor and indefinitely prevent
-new tasks from being processed.
+of threads based on your processor's core count. As such, you should **not**
+run long-lived tasks on the default executor. That reduces the number of
+workers available and at worst, can saturate the executor indefinitely
+and prevent new tasks from being processed.
 
 Managing long-lived tasks
 -------------------------
