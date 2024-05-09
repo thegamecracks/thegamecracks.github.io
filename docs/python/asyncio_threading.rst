@@ -523,8 +523,8 @@ We can wrap it up in another class to make this interaction simpler:
         # This would stop being true if items could be returned out of order.
         #
         # The callback could also use something besides an asyncio.Queue to
-        # store results and notify waiters, like a mapping of IDs to futures,
-        # if the ImageProcessor class could return ancillary data.
+        # store results and notify waiters, like pairing each item with an
+        # asyncio future.
 
 
     async def main(sync_worker: ImageProcessor):
