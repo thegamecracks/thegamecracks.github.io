@@ -719,7 +719,7 @@ the loop to an attribute and then setting an event:
 
 .. code-block:: python
 
-    class Runner:
+    class EventThread:
         def __init__(self):
             self._thread: threading.Thread | None = None
             self._loop: asyncio.AbstractEventLoop | None = None
@@ -743,14 +743,19 @@ the loop to an attribute and then setting an event:
             self._loop = asyncio.get_running_loop()
             self._event.set()
 
-And putting our Runner class into practice:
+And putting our EventThread class into practice:
 
 .. code-block:: python
 
-    runner = Runner()
-    runner.start()
+    async def func():
+        await asyncio.sleep(1)
+        print("Hello from event loop!")
+        return 1234
 
-    loop = runner.get_loop()
+    thread = EventThread()
+    thread.start()
+
+    loop = thread.get_loop()
     fut = asyncio.run_coroutine_threadsafe(func(), loop)
     print("Main thread waiting on coroutine...")
     result = fut.result()
@@ -760,7 +765,7 @@ And putting our Runner class into practice:
     :force:
 
     Main thread waiting on coroutine...
-    Hello from runner!
+    Hello from event loop!
     Main thread received: 1234
 
 Great! We have an event loop that runs forever and a way to submit coroutines
@@ -780,7 +785,7 @@ Both will work, but the former will be a bit simpler in our case:
 .. code-block:: python
     :emphasize-lines: 6, 18-22, 25, 27
 
-    class Runner:
+    class EventThread:
         def __init__(self):
             self._loop: asyncio.AbstractEventLoop | None = None
             self._event = threading.Event()
@@ -812,33 +817,293 @@ Both will work, but the former will be a bit simpler in our case:
             self._loop = asyncio.get_running_loop()
             self._event.set()
 
-And now, we can stop the runner at the end:
+And now we can stop the event loop at the end:
 
 .. code-block:: python
     :emphasize-lines: 10-11
 
-    runner = Runner()
-    runner.start()
+    thread = EventThread()
+    thread.start()
 
-    loop = runner.get_loop()
+    loop = thread.get_loop()
     fut = asyncio.run_coroutine_threadsafe(func(), loop)
     print("Main thread waiting on coroutine...")
     result = fut.result()
     print("Main thread received:", result)
 
-    runner.stop()
-    print("Runner stopped")
+    thread.stop()
+    print("Event loop stopped")
 
 .. code-block:: python
     :emphasize-lines: 4
     :force:
 
     Main thread waiting on coroutine...
-    Hello from runner!
+    Hello from event loop!
     Main thread received: 1234
-    Runner stopped
+    Event loop stopped
 
-TODO: show concurrent.futures.Future and context manager rewrite
+Finally, we have a class that can run an event loop indefinitely
+and let us submit any coroutine to it! 🎉
+
+Refactoring our EventThread class
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Before I end this guide, I want to suggest some improvements to this class.
+For one, the ``start()`` and ``stop()`` methods should be turned into a
+context manager so it's harder to accidentally leave it unclosed.
+It could also use a ``submit()`` method that handles calling
+``asyncio.run_coroutine_threadsafe()`` for us.
+But I want to talk about the more interesting topic, futures.
+
+First, what is a future? According to :py:class:`asyncio.Future`'s docs:
+
+    A Future represents an eventual result of an asynchronous operation.
+
+What does that mean? In Python, this Future class is something you can call
+``set_result()`` on with some arbitrary value, and you can ``await`` from a
+coroutine to get its result. It also has this ``add_done_callback()`` method
+to make stuff run when the result is set.
+In other words, it's kind of like a one-time event that stores a value
+when it's done. If you look back at the EventThread class:
+
+.. code-block:: python
+
+    class EventThread:
+        def __init__(self):
+            self._loop: asyncio.AbstractEventLoop | None = None
+            self._event = threading.Event()
+            ...
+
+        def _set_event_loop(self):
+            self._loop = asyncio.get_running_loop()
+            self._event.set()
+
+We have a ``threading.Event`` that gets set right after the ``_loop`` attribute
+is assigned a value. See what I'm getting at? We've manually combined an event
+and attribute together to essentially hand-craft our own future, except that
+it's for synchronous threads rather than asyncio.
+What if we had a full-fledged synchronous future object that worked like
+``asyncio.Future``?
+
+Well, you've been looking at that since the very start of this guide!
+The :py:mod:`concurrent.futures` package has its own implementation of
+futures used to transfer results from worker threads back to the caller:
+
+.. code-block:: python
+
+    with ThreadPoolExecutor() as executor:
+        fut = executor.submit(my_func, arg1, arg2)
+        fut.result()
+
+What it returns is a :py:class:`concurrent.futures.Future` class, and calling
+``.result()`` is how we wait for results (since we can't use ``await`` outside
+of ``async def`` functions). It also has the same ``add_done_callback()`` method
+to let us add our own callbacks!
+
+Can we create our own futures and use it for other things?
+
+Here's the awkward bit, the documentation says:
+
+    Future instances are created by :py:meth:`Executor.submit() <concurrent.futures.Executor>`
+    and should not be created directly except for testing.
+
+Supposedly we shouldn't use this beyond testing purposes.
+But if you look at how `run_coroutine_threadsafe() <https://github.com/python/cpython/blob/v3.12.3/Lib/asyncio/tasks.py#L931-L951>`_
+is implemented:
+
+.. code-block:: python
+    :emphasize-lines: 8
+
+    def run_coroutine_threadsafe(coro, loop):
+        """Submit a coroutine object to a given event loop.
+
+        Return a concurrent.futures.Future to access the result.
+        """
+        if not coroutines.iscoroutine(coro):
+            raise TypeError('A coroutine object is required')
+        future = concurrent.futures.Future()
+
+        def callback():
+            try:
+                futures._chain_future(ensure_future(coro, loop=loop), future)
+            except (SystemExit, KeyboardInterrupt):
+                raise
+            except BaseException as exc:
+                if future.set_running_or_notify_cancel():
+                    future.set_exception(exc)
+                raise
+
+        loop.call_soon_threadsafe(callback)
+        return future
+
+It's not actually that difficult to set up the class. You'll also notice
+there's a function in asyncio, :py:func:`asyncio.wrap_future()`,
+specifically meant to convert these Future objects into asyncio equivalents:
+
+.. py:function:: asyncio.wrap_future(future, *, loop=None)
+
+    Wrap a :py:class:`concurrent.futures.Future` object in
+    a :py:class:`asyncio.Future` object.
+
+Admittedly I can't guarantee that ``concurrent.futures.Future`` won't
+break in future versions of Python, but regardless, it's perfect for
+our EventThread class which needs to broadcast a single value from its thread.
+Let's replace our ``_event`` and ``_loop`` attributes with a single
+``_loop_fut`` attribute:
+
+.. code-block:: python
+    :emphasize-lines: 11, 25-26, 36-37
+
+    from typing import Awaitable, TypeVar
+
+    T = TypeVar("T")
+
+    class EventThread:
+        _loop_fut: concurrent.futures.Future[asyncio.AbstractEventLoop]
+
+        def __init__(self):
+            self._thread: threading.Thread | None = None
+            self._stop_ev: asyncio.Event | None = None
+            self._loop_fut = concurrent.futures.Future()
+
+        def __enter__(self):
+            coro = self._run_forever()
+            self._thread = threading.Thread(target=asyncio.run, args=(coro,))
+            self._thread.start()
+            return self
+
+        def __exit__(self, exc_type, exc_val, tb):
+            assert self._stop_ev is not None
+            assert self._thread is not None
+            self.get_loop().call_soon_threadsafe(self._stop_ev.set)
+            self._thread.join()
+
+        def get_loop(self) -> asyncio.AbstractEventLoop:
+            return self._loop_fut.result()
+
+        def submit(self, coro: Awaitable[T]) -> concurrent.futures.Future[T]:
+            return asyncio.run_coroutine_threadsafe(coro, self.get_loop())
+
+        async def _run_forever(self):
+            self._stop_ev = asyncio.Event()
+            self._set_event_loop()
+            await self._stop_ev.wait()
+
+        def _set_event_loop(self):
+            self._loop_fut.set_result(asyncio.get_running_loop())
+
+We can also go one step further and replace ``_stop_ev`` with a stop future:
+
+.. code-block:: python
+    :emphasize-lines: 8, 18, 29
+
+    class EventThread:
+        _loop_fut: concurrent.futures.Future[asyncio.AbstractEventLoop]
+        _stop_fut: concurrent.futures.Future[None]
+
+        def __init__(self):
+            self._thread: threading.Thread | None = None
+            self._loop_fut = concurrent.futures.Future()
+            self._stop_fut = concurrent.futures.Future()
+
+        def __enter__(self):
+            coro = self._run_forever()
+            self._thread = threading.Thread(target=asyncio.run, args=(coro,))
+            self._thread.start()
+            return self
+
+        def __exit__(self, exc_type, exc_val, tb):
+            assert self._thread is not None
+            self._stop_fut.set_result(None)
+            self._thread.join()
+
+        def get_loop(self) -> asyncio.AbstractEventLoop:
+            return self._loop_fut.result()
+
+        def submit(self, coro: Awaitable[T]) -> concurrent.futures.Future[T]:
+            return asyncio.run_coroutine_threadsafe(coro, self.get_loop())
+
+        async def _run_forever(self):
+            self._set_event_loop()
+            await asyncio.wrap_future(self._stop_fut)
+
+        def _set_event_loop(self):
+            self._loop_fut.set_result(asyncio.get_running_loop())
+
+And just for fun, let's use a third to allow the main thread (or other threads)
+to add callbacks that run when the event loop stops:
+
+.. code-block:: python
+    :emphasize-lines: 12, 31-32, 39
+
+    EventThreadCallback = Callable[[concurrent.futures.Future[None]], object]
+
+    class EventThread:
+        _loop_fut: concurrent.futures.Future[asyncio.AbstractEventLoop]
+        _stop_fut: concurrent.futures.Future[None]
+        _finished_fut: concurrent.futures.Future[None]
+
+        def __init__(self):
+            self._thread: threading.Thread | None = None
+            self._loop_fut = concurrent.futures.Future()
+            self._stop_fut = concurrent.futures.Future()
+            self._finished_fut = concurrent.futures.Future()
+
+        def __enter__(self):
+            coro = self._run_forever()
+            self._thread = threading.Thread(target=asyncio.run, args=(coro,))
+            self._thread.start()
+            return self
+
+        def __exit__(self, exc_type, exc_val, tb):
+            assert self._thread is not None
+            self._stop_fut.set_result(None)
+            self._thread.join()
+
+        def get_loop(self) -> asyncio.AbstractEventLoop:
+            return self._loop_fut.result()
+
+        def submit(self, coro: Awaitable[T]) -> concurrent.futures.Future[T]:
+            return asyncio.run_coroutine_threadsafe(coro, self.get_loop())
+
+        def add_done_callback(self, callback: EventThreadCallback):
+            self._finished_fut.add_done_callback(callback)
+
+        async def _run_forever(self):
+            self._set_event_loop()
+            try:
+                await asyncio.wrap_future(self._stop_fut)
+            finally:
+                self._finished_fut.set_result(None)
+
+        def _set_event_loop(self):
+            self._loop_fut.set_result(asyncio.get_running_loop())
+
+This is what its usage will look like:
+
+.. code-block:: python
+    :emphasize-lines: 2
+
+    with EventThread() as thread:
+        thread.add_done_callback(lambda fut: print("Event loop stopped"))
+
+        fut = thread.submit(func())
+        print("Main thread waiting on coroutine...")
+        result = fut.result()
+        print("Main thread received:", result)
+
+.. caution::
+
+    Callbacks added to :py:class:`concurrent.futures.Future` will run on
+    whichever thread calls its ``set_result()`` method. As such, you should
+    make sure to only add callbacks that are thread-safe, such as a function
+    that sets a :py:class:`threading.Event` or pushes to a :py:class:`queue.Queue`.
+
+.. *But what's the point of using callbacks for this? Can't I just run my code*
+.. *after the event thread's already exited?*
+..
+.. TODO: showcase practical usage of EventThread.add_done_callback()
 
 .. rubric:: Footnotes
 
