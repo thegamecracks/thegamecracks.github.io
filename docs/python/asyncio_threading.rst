@@ -185,6 +185,8 @@ method instead:
 You could also create your own ThreadPoolExecutor and submit tasks
 to that:
 
+.. _pass-executor-to-asyncio:
+
 .. code-block:: python
 
     async def main(executor: ThreadPoolExecutor):
@@ -310,6 +312,7 @@ However, if there were other tasks running at the same time:
 
             with ImageProcessor() as worker:
                 worker.submit(b"some image bytes")
+                await asyncio.sleep(3)
                 raise Exception("Houston, we have a problem!")
 
 Then when exiting the worker, it would block the event loop until the remaining
@@ -317,9 +320,33 @@ image was processed, preventing ``do_something_else()`` from running during
 that period. We could remove the ``_thread.join()`` call, but that would
 make it much more confusing to reason about the thread's lifetime.
 It's also worth noting that ``queue.put()`` can also block, but since the queue
-doesn't have a max size set, it doesn't apply here.
+doesn't have a max size set, it's effectively non-blocking.
 
-TODO
+Actually, the fact that ``put()`` doesn't need to block makes this class
+a potentially viable option! The only problem we have here is shutting down
+the worker thread. We can mitigate this by doing the same thing in the previous
+`ThreadPoolExecutor example <pass-executor-to-asyncio_>`_, which is to construct
+our image processor before starting the event loop:
+
+.. code-block:: python
+
+    async def main(worker: ImageProcessor):
+        async with asyncio.TaskGroup() as tg:
+            tg.create_task(do_something_else())
+            worker.submit(b"some image bytes")
+            await asyncio.sleep(3)
+            raise Exception("Houston, we have a problem!")
+
+    with ImageProcessor() as worker:
+        asyncio.run(main(worker))
+
+Now if an error occurs, our event loop is able to run all remaining coroutines
+and shut down before our worker blocks and shuts down.
+
+*But what if I want to create workers on the fly?*
+That's a fair point, we haven't solved the problem of managing threads
+from inside the event loop. To do that, we'll need to know how to send
+events from the worker to the event loop first.
 
 Because of how asyncio depends on callbacks being non-blocking, the way you
 communicate messages from your worker thread back to the event loop has to
