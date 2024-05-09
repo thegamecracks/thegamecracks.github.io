@@ -562,9 +562,282 @@ Running event loops in other threads
 
 .. warning:: This section is currently a work-in-progress.
 
-In the previous sections I discussed, but what if you have a synchronous
-program that you can't migrate to asyncio, but you still need to run
+In the previous sections I discussed creating threads to be used by
+the asyncio event loop, but what if you have a synchronous program
+that you can't migrate to asyncio and yet you still need to run
 asynchronous code inside it?
+
+Before we start threading, let's understand the ways we can run coroutines
+in our main thread. First and foremost is :py:func:`asyncio.run()`:
+
+.. code-block:: python
+
+    import asyncio
+
+    async def request(url: str) -> bytes:
+        async with httpx.AsyncClient() as client:
+            ...
+
+    first = asyncio.run(request("https://example.com"))
+    second = asyncio.run(request("https://sub.example.com"))
+
+:py:func:`asyncio.run()` starts a new event loop each time, runs your
+coroutine to completion, cleans up the event loop, and then returns the
+result of your coroutine. This can be sufficient for some scenarios,
+but it requires the coroutine to set up any asynchronous resources from within
+the event loop. asyncio's primitives, whether it be locks, queues, or sockets,
+are tightly coupled to the event loop they're created in. Trying to re-use
+them across event loops can lead to obscure errors as a result of callbacks
+running on different event loops:
+
+.. code-block:: python
+
+    import asyncio
+
+    async def new_fut() -> asyncio.Future:
+        fut = asyncio.get_running_loop().create_future()
+        fut.add_done_callback(lambda fut: print("fut finished"))
+        return fut
+
+    async def set_fut(fut: asyncio.Future):
+        fut.set_result("Done!")
+
+    fut = asyncio.run(new_fut())
+    asyncio.run(set_fut(fut))
+
+.. code-block:: python
+   :force:
+
+    Traceback (most recent call last):
+    File "main.py", line 12, in <module>
+        asyncio.run(set_fut(fut))
+    File "Lib\asyncio\runners.py", line 190, in run
+        return runner.run(main)
+               ^^^^^^^^^^^^^^^^
+    File "Lib\asyncio\runners.py", line 118, in run
+        return self._loop.run_until_complete(task)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "Lib\asyncio\base_events.py", line 654, in run_until_complete
+        return future.result()
+               ^^^^^^^^^^^^^^^
+    File "main.py", line 9, in set_fut
+        fut.set_result("Done!")
+    File "Lib\asyncio\base_events.py", line 762, in call_soon
+        self._check_closed()
+    File "Lib\asyncio\base_events.py", line 520, in _check_closed
+        raise RuntimeError('Event loop is closed')
+    RuntimeError: Event loop is closed
+
+This example looks a bit weird since we're just passing a future,
+but in a practical situation this can happen indirectly when you
+re-use some instance from an async library, like an HTTP client.
+With Python 3.11 and newer, the :py:class:`asyncio.Runner` class
+can avoid this issue by re-using an event loop to run multiple
+coroutines:
+
+.. code-block:: python
+
+    with asyncio.Runner() as runner:
+        fut = runner.run(new_fut())
+        runner.run(set_fut(fut))
+
+This lets you start, pause, and resume the event loop while ensuring
+that it gets cleaned up once you exit the context manager.
+For older versions, you had to create the event loop yourself:
+
+.. code-block:: python
+
+    loop = asyncio.new_event_loop()
+
+    fut = loop.run_until_complete(new_fut())
+    loop.run_until_complete(set_fut(fut))
+
+    loop.close()
+
+However, managing the event loop like above is notoriously difficult
+to get right. The above example, which you might see often in other
+codebases, has multiple problems with it:
+
+1. Current event loop not set for the thread
+2. Execution and teardown not enclosed in try/finally
+3. Asynchronous generators not closed
+4. Default executor not closed
+5. Remaining tasks not cancelled and waited on
+
+In short, it has a high risk of not executing try/finally clauses
+and leaving behind unclosed resources (see `this gist <https://gist.github.com/thegamecracks/e14904a2ffe346a4f74c827d7492cc38>`_
+for an example).
+If you really need to do this, I suggest vendoring the `Runner <https://github.com/python/cpython/blob/v3.12.3/Lib/asyncio/runners.py>`_
+class from CPython's source code, or re-purposing `asyncio.run() <https://github.com/python/cpython/blob/v3.10.14/Lib/asyncio/runners.py>`_'s
+implementation as it existed in 3.10 and older.
+
+Regardless of which one you pick above, they all have the same limitation
+in that the event loop stops running in between the coroutines you pass to it.
+If you wanted to say, serve multiple connections asynchronously, the event loop
+would only run during the ``.run()`` call when you add another connection, before
+pausing indefinitely again. This is where we come back to threads! With the above
+options in mind, how do we start an event loop in another thread?
+
+Well, the first thing you can start with is passing :py:func:`asyncio.run()`
+as a target function for the thread to run:
+
+.. code-block:: python
+
+    async def func():
+        ...
+
+    coro = func()
+    thread = threading.Thread(target=asyncio.run, args=(coro,))
+    thread.start()
+
+But we know that :py:func:`asyncio.run()` can only run one coroutine before
+it closes the event loop. How do we give it more than one coroutine to run?
+We need a way to run coroutines while keeping the event loop alive...
+
+What if we give it a coroutine that runs forever? Let's see:
+
+.. code-block:: python
+
+    async def run_forever():
+        while True:
+            await asyncio.sleep(60)
+
+    thread = threading.Thread(target=asyncio.run, args=(run_forever(),))
+    thread.start()
+
+Now the event loop is running indefinitely, but we don't have a way to
+pass it coroutines. If you followed along in the previous sections, you
+might recall the :py:func:`asyncio.run_coroutine_threadsafe()` function
+I briefly mentioned. It exists specifically to let threads submit coroutines
+to an event loop and wait on their results if needed. But if you look at
+its signature, you'll see it needs a coroutine object and the event loop
+object. We don't have an event loop object in our main thread, so we need
+a way to have the worker thread send us an event loop object back.
+We can do this in many ways, but let's try a simple one, which is assigning
+the loop to an attribute and then setting an event:
+
+.. code-block:: python
+
+    class Runner:
+        def __init__(self):
+            self._thread: threading.Thread | None = None
+            self._loop: asyncio.AbstractEventLoop | None = None
+            self._event = threading.Event()
+
+        def start(self):
+            self._thread = threading.Thread(target=asyncio.run, args=(self._run_forever(),), daemon=True)
+            self._thread.start()
+
+        def get_loop(self) -> asyncio.AbstractEventLoop:
+            self._event.wait()
+            assert self._loop is not None
+            return self._loop
+
+        async def _run_forever(self):
+            self._set_event_loop()
+            while True:
+                await asyncio.sleep(60)
+
+        def _set_event_loop(self):
+            self._loop = asyncio.get_running_loop()
+            self._event.set()
+
+And putting our Runner class into practice:
+
+.. code-block:: python
+
+    runner = Runner()
+    runner.start()
+
+    loop = runner.get_loop()
+    fut = asyncio.run_coroutine_threadsafe(func(), loop)
+    print("Main thread waiting on coroutine...")
+    result = fut.result()
+    print("Main thread received:", result)
+
+.. code-block:: python
+   :force:
+
+    Main thread waiting on coroutine...
+    Hello from runner!
+    Main thread received: 1234
+
+Great! We have an event loop that runs forever and a way to submit coroutines
+to it. The last thing we're missing is a way to *gracefully* stop the thread.
+If you read the class carefully, you'll notice that the thread had ``daemon=True``
+set which would abruptly kill the thread, risking improper cleanup just like the
+previous ``asyncio.new_event_loop()`` example. To avoid that, we need a way
+to send a signal to our ``_run_forever()`` method so it knows to exit.
+
+Given that we used an event to notify the main thread of our event loop object,
+let's try to do the same thing here, but with :py:class:`asyncio.Event` instead.
+As per the last section, we know that we can call the event's ``set()`` method
+from our main thread using ``loop.call_soon_threadsafe(event.set)`` instead of
+``asyncio.run_coroutine_threadsafe()`` since ``event.set()`` isn't a coroutine.
+Both will work, but the former will be a bit simpler in our case:
+
+.. code-block:: python
+   :emphasize-lines: 6, 18-22, 25, 27
+
+    class Runner:
+        def __init__(self):
+            self._loop: asyncio.AbstractEventLoop | None = None
+            self._event = threading.Event()
+            self._thread: threading.Thread | None = None
+            self._stop_ev: asyncio.Event | None = None
+
+        def start(self):
+            coro = self._run_forever()
+            self._thread = threading.Thread(target=asyncio.run, args=(coro,))
+            self._thread.start()
+
+        def get_loop(self) -> asyncio.AbstractEventLoop:
+            self._event.wait()
+            assert self._loop is not None
+            return self._loop
+
+        def stop(self):
+            assert self._stop_ev is not None
+            assert self._thread is not None
+            self.get_loop().call_soon_threadsafe(self._stop_ev.set)
+            self._thread.join()
+
+        async def _run_forever(self):
+            self._stop_ev = asyncio.Event()
+            self._set_event_loop()
+            await self._stop_ev.wait()
+
+        def _set_event_loop(self):
+            self._loop = asyncio.get_running_loop()
+            self._event.set()
+
+And now, we can stop the runner at the end:
+
+.. code-block:: python
+   :emphasize-lines: 10-11
+
+    runner = Runner()
+    runner.start()
+
+    loop = runner.get_loop()
+    fut = asyncio.run_coroutine_threadsafe(func(), loop)
+    print("Main thread waiting on coroutine...")
+    result = fut.result()
+    print("Main thread received:", result)
+
+    runner.stop()
+    print("Runner stopped")
+
+.. code-block:: python
+   :emphasize-lines: 4
+   :force:
+
+    Main thread waiting on coroutine...
+    Hello from runner!
+    Main thread received: 1234
+    Runner stopped
+
+TODO: show concurrent.futures.Future and context manager rewrite
 
 .. rubric:: Footnotes
 
