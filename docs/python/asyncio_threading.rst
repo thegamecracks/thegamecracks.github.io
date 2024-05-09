@@ -203,8 +203,8 @@ to that:
 Keep in mind that the default thread pool executor has a maximum number
 of threads based on your processor's core count. As such, you should **not**
 run long-lived tasks on the default executor. That reduces the number of
-workers available and at worst, can saturate the executor indefinitely
-and prevent new tasks from being processed.
+workers available to other tasks and can at worst saturate the executor,
+preventing new tasks from being processed indefinitely.
 
 Managing long-lived tasks
 -------------------------
