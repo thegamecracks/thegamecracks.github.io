@@ -770,7 +770,7 @@ previous ``asyncio.new_event_loop()`` example. To avoid that, we need a way
 to send a signal to our ``_run_forever()`` method so it knows to exit.
 
 Given that we used an event to notify the main thread of our event loop object,
-let's try to do the same thing here, but with :py:class:`asyncio.Event` instead.
+let's try to do the same thing here but with :py:class:`asyncio.Event` instead.
 As per the last section, we know that we can call the event's ``set()`` method
 from our main thread using ``loop.call_soon_threadsafe(event.set)`` instead of
 ``asyncio.run_coroutine_threadsafe()`` since ``event.set()`` isn't a coroutine.
