@@ -16,6 +16,7 @@ author = "thegamecracks"
 extensions = [
     "ablog",
     "sphinx.ext.intersphinx",
+    "sphinx_copybutton",
 ]
 
 templates_path = ["_templates"]
