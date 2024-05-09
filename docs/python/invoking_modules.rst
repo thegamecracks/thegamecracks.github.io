@@ -29,7 +29,7 @@ Eventually your code started growing too big to be well-organized in a single fi
 so you decide to split its functionality into separate `modules`_:
 
 .. code-block:: python
-   :force:
+    :force:
 
     api.py
     cache.py
@@ -48,7 +48,7 @@ they would need to download all four scripts inside whatever working directory
 they might be in, as well as any dependencies required by your script:
 
 .. code-block:: python
-   :force:
+    :force:
 
     my_project/
     └── api.py, cache.py, cli.py, main.py
@@ -71,7 +71,7 @@ your code into a `package`_, where you've collected your scripts into
 a single directory:
 
 .. code-block:: python
-   :force:
+    :force:
 
     my_project/
     └── my_downloader/
@@ -123,7 +123,7 @@ the package layout it resides in. As such, you lose features of packages
 like ``__init__.py`` and relative imports:
 
 .. code-block:: python
-   :force:
+    :force:
 
     /my_project $ python my_downloader/main.py
     Traceback (most recent call last):
@@ -156,7 +156,7 @@ We can take advantage of this to make ``my_downloader`` invokable
 by renaming ``main.py`` to ``__main__.py``:
 
 .. code-block:: python
-   :force:
+    :force:
 
     my_project/
     └── my_downloader/
@@ -220,7 +220,7 @@ directory, including your scripts, and then run them directly:
 .. _sys.path: https://docs.python.org/3/library/sys.html#sys.path
 
 .. code-block:: python
-   :force:
+    :force:
 
     my_project/
     └── app/
@@ -248,7 +248,7 @@ directory, including your scripts, and then run them directly:
 Or you'll organize all of your scripts into a package in your project root:
 
 .. code-block:: python
-   :force:
+    :force:
 
     my_project/
     └── my_package/
@@ -293,7 +293,7 @@ your build configuration.
 Here's the bare minimum you need to make a distribution package:
 
 .. code-block:: python
-   :force:
+    :force:
 
     my_project/
     ├── my_downloader/
@@ -302,7 +302,7 @@ Here's the bare minimum you need to make a distribution package:
     └── pyproject.toml
 
 .. code-block:: toml
-   :caption: pyproject.toml
+    :caption: pyproject.toml
 
     [build-system]
     requires = ["setuptools"]

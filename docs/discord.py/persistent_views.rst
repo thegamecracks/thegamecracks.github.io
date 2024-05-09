@@ -98,7 +98,7 @@ state on disk.
 .. _asyncpg: https://magicstack.github.io/asyncpg/current/
 
 .. code-block:: python
-   :caption: stateless.py
+    :caption: stateless.py
 
     import discord
 
@@ -133,7 +133,7 @@ state on disk.
     client.run("TOKEN")
 
 .. code-block:: python
-   :caption: stateful.py
+    :caption: stateful.py
 
     import contextlib
     import sqlite3

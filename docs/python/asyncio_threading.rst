@@ -423,7 +423,7 @@ callback to run on the event loop's thread, and then sends one byte to a
 self-pipe which the selector is listening on:
 
 .. code-block:: python
-   :emphasize-lines: 6, 9
+    :emphasize-lines: 6, 9
 
     def call_soon_threadsafe(self, callback, *args, context=None):
         """Like call_soon(), but thread-safe."""
@@ -446,7 +446,7 @@ We can add a way to register callbacks on our worker that run when an item
 has finished processing:
 
 .. code-block:: python
-   :emphasize-lines: 21-22
+    :emphasize-lines: 21-22
 
     from typing import Callable
 
@@ -606,7 +606,7 @@ running on different event loops:
     asyncio.run(set_fut(fut))
 
 .. code-block:: python
-   :force:
+    :force:
 
     Traceback (most recent call last):
     File "main.py", line 12, in <module>
@@ -756,7 +756,7 @@ And putting our Runner class into practice:
     print("Main thread received:", result)
 
 .. code-block:: python
-   :force:
+    :force:
 
     Main thread waiting on coroutine...
     Hello from runner!
@@ -777,7 +777,7 @@ from our main thread using ``loop.call_soon_threadsafe(event.set)`` instead of
 Both will work, but the former will be a bit simpler in our case:
 
 .. code-block:: python
-   :emphasize-lines: 6, 18-22, 25, 27
+    :emphasize-lines: 6, 18-22, 25, 27
 
     class Runner:
         def __init__(self):
@@ -814,7 +814,7 @@ Both will work, but the former will be a bit simpler in our case:
 And now, we can stop the runner at the end:
 
 .. code-block:: python
-   :emphasize-lines: 10-11
+    :emphasize-lines: 10-11
 
     runner = Runner()
     runner.start()
@@ -829,8 +829,8 @@ And now, we can stop the runner at the end:
     print("Runner stopped")
 
 .. code-block:: python
-   :emphasize-lines: 4
-   :force:
+    :emphasize-lines: 4
+    :force:
 
     Main thread waiting on coroutine...
     Hello from runner!
