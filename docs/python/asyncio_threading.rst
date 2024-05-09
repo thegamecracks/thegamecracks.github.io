@@ -829,7 +829,6 @@ And now we can stop the event loop at the end:
     print("Event loop stopped")
 
 .. code-block:: python
-    :emphasize-lines: 4
     :force:
 
     Main thread waiting on coroutine...
