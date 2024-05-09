@@ -209,8 +209,6 @@ preventing new tasks from being processed indefinitely.
 Managing long-lived tasks
 -------------------------
 
-.. warning:: This section is currently a work-in-progress.
-
 What do you do to run long-lived tasks in threads then? It's simple!
 Thread them as you normally would in a synchronous program:
 
@@ -560,8 +558,6 @@ We can wrap it up in another class to make this interaction simpler:
 
 Running event loops in other threads
 ------------------------------------
-
-.. warning:: This section is currently a work-in-progress.
 
 In the previous sections I discussed creating threads to be used by
 the asyncio event loop, but what if you have a synchronous program
