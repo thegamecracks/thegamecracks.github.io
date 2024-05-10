@@ -905,7 +905,8 @@ let's try to do the same thing here but with :py:class:`asyncio.Event` instead.
 As per the last section, we know that we can call the event's ``set()`` method
 from our main thread using ``loop.call_soon_threadsafe(event.set)`` instead of
 ``asyncio.run_coroutine_threadsafe()`` since ``event.set()`` isn't a coroutine.
-Both will work, but the former will be a bit simpler in our case:
+You could wrap ``event.set()`` in a coroutine function, but we'll go with
+the former approach since it's simpler:
 
 .. code-block:: python
     :emphasize-lines: 6, 18-22, 25, 27
@@ -1118,7 +1119,7 @@ Let's replace our ``_event`` and ``_loop`` attributes with a single
             self._loop_fut.set_result(asyncio.get_running_loop())
 
 See how nice it works? We can also go one step further and replace ``_stop_ev``
-with a stop future:
+with another future:
 
 .. code-block:: python
     :emphasize-lines: 8, 18, 29
@@ -1156,8 +1157,8 @@ with a stop future:
         def _set_event_loop(self):
             self._loop_fut.set_result(asyncio.get_running_loop())
 
-And just for fun, let's use a third to allow the main thread (or other threads)
-to add callbacks that run when the event loop stops:
+And just for fun, let's use a third future to allow the main thread
+(or other threads) to add callbacks that run when the event loop stops:
 
 .. code-block:: python
     :emphasize-lines: 12, 31-32, 39
