@@ -59,6 +59,16 @@ html_sidebars = {
         "ablog/archives.html",
         "sbt-sidebar-nav.html",
     ],
+    "blog": [
+        "navbar-logo.html",
+        "search-field.html",
+        "ablog/postcard.html",
+        "ablog/recentposts.html",
+        "ablog/tagcloud.html",
+        "ablog/categories.html",
+        "ablog/archives.html",
+        "sbt-sidebar-nav.html",
+    ],
     "posts/*": [
         "navbar-logo.html",
         "search-field.html",
