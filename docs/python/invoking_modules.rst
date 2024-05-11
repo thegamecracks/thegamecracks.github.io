@@ -371,25 +371,15 @@ but those two are the only required ones.
 .. _Hatch: https://hatch.pypa.io/latest/
 .. _Poetry: https://python-poetry.org/
 
-To build your |sdist|_ and |wheel|_ distribution files:
+With pyproject.toml created, you can tell pip to find it in your
+project root and install your distribution:
 
 .. code-block:: shell
 
-    /my_project $ pip install build
-    /my_project $ python -m build  # Hey, it's -m again!
-
-.. |sdist| replace:: ``.tar.gz``
-.. _sdist: https://packaging.python.org/en/latest/discussions/package-formats/
-.. |wheel| replace:: ``.whl``
-.. _wheel: https://packaging.python.org/en/latest/discussions/package-formats/
-
-And to install your package:
-
-.. code-block:: shell
-
-    /my_project $ pip install dist/my-github-downloader-0.1.0-py3-none-any.whl
-    # Or, installing directly from pyproject.toml:
     /my_project $ pip install .
+
+And now you can use ``python -m my_downloader`` and ``import my_downloader``
+anywhere you want, if you wanted to import it in your other scripts!
 
 .. seealso:: Using editable installs: https://setuptools.pypa.io/en/latest/userguide/development_mode.html
 
