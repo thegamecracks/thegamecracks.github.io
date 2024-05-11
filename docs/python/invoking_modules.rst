@@ -422,14 +422,14 @@ have multiple Python versions.
 
 .. rubric:: Footnotes
 
-.. [#site]
-   Assuming Python isn't told to skip loading the |site-module|_ module on startup.
-   This can be turned off by using the |dash-S|_ flag, preventing ``site-packages/``
-   from being searched.
 .. [#no-parent-package]
    Corresponds to ``ImportError: attempted relative import with no known parent package``
 .. [#beyond-top-level]
    Corresponds to ``ImportError: attempted relative import beyond top-level package``
+.. [#site]
+   Assuming Python isn't told to skip loading the |site-module|_ module on startup.
+   This can be turned off by using the |dash-S|_ flag, preventing ``site-packages/``
+   from being searched.
 .. |site-module| replace:: ``site``
 .. _site-module: https://docs.python.org/3/library/site.html
 .. |dash-S| replace:: ``-S``
