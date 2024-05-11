@@ -224,9 +224,6 @@ directory, including your scripts, and then run them directly:
 
     my_project/
     └── app/
-        ├── cli/
-        │   ├── __init__.py
-        │   └── __main__.py
         ├── layouts/
         │   ├── __init__.py
         │   └── ...
