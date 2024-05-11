@@ -381,7 +381,20 @@ project root and install your distribution:
 And now you can use ``python -m my_downloader`` and ``import my_downloader``
 anywhere you want, if you wanted to import it in your other scripts!
 
-.. seealso:: Using editable installs: https://setuptools.pypa.io/en/latest/userguide/development_mode.html
+.. tip::
+
+    You can also install your project in `editable mode`_:
+
+    .. code-block:: shell
+
+        /my_project $ pip install --editable .
+
+    This removes the need to re-install your package every time you make
+    changes to it. For avoiding certain side effects, this mode is best
+    used with `src-layout`_.
+
+.. _editable mode: https://setuptools.pypa.io/en/latest/userguide/development_mode.html
+.. _src-layout: https://setuptools.pypa.io/en/latest/userguide/package_discovery.html#src-layout
 
 Sidenote: why is -m recommended on Windows?
 -------------------------------------------
