@@ -365,6 +365,8 @@ but those two are the only required ones.
    layouts, and other build systems like `Hatch`_ and `Poetry`_ handle package
    discovery differently.
 
+.. |project-table| replace:: ``[project]``
+.. _project-table: https://packaging.python.org/en/latest/guides/writing-pyproject-toml/
 .. _automatic discovery: https://setuptools.pypa.io/en/latest/userguide/package_discovery.html#automatic-discovery
 .. _Hatch: https://hatch.pypa.io/latest/
 .. _Poetry: https://python-poetry.org/
@@ -376,8 +378,6 @@ To build your |sdist|_ and |wheel|_ distribution files:
     /my_project $ pip install build
     /my_project $ python -m build  # Hey, it's -m again!
 
-.. |project-table| replace:: ``[project]``
-.. _project-table: https://packaging.python.org/en/latest/guides/writing-pyproject-toml/
 .. |sdist| replace:: ``.tar.gz``
 .. _sdist: https://packaging.python.org/en/latest/discussions/package-formats/
 .. |wheel| replace:: ``.whl``
