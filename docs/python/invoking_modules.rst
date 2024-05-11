@@ -228,6 +228,33 @@ meaning Python can only resolve ``import pkg``.
 Therefore to import either submodule, it must be fully qualified as
 ``import pkg.foo`` and ``import pkg.bar``.
 
+.. hint::
+
+    If you recall how relative imports are written, this is where you
+    might use them over absolute imports!
+
+    .. code-block:: python
+
+        from . import foo
+        from . import bar
+        from .foo import ham, spam
+
+    Now you don't have to fully qualify the import because Python assumes that
+    your relative imports start from each module's parent package, ``pkg``.
+    In other words, the above relative imports become equivalent to
+    the following absolute imports:
+
+    .. code-block:: python
+
+        from pkg import foo
+        from pkg import bar
+        from pkg.foo import ham, spam
+
+    Unfortunately relative imports can't be used outside of submodules so you
+    wouldn't be permitted to say, write ``from .pkg import foo`` inside ``main.py``
+    [#no-parent-package]_, or try to import modules beyond the top-level package
+    like ``from .. import mod`` [#beyond-top-level]_.
+
 That's why for local projects, it's important to organize and run your scripts
 in a consistent manner. For example, you might put modules and scripts in the
 same directory and then run your scripts with ``python path/to/script.py``:
@@ -396,6 +423,10 @@ have multiple Python versions.
    Assuming Python isn't told to skip loading the |site-module|_ module on startup.
    This can be turned off by using the |dash-S|_ flag, preventing ``site-packages/``
    from being searched.
+.. [#no-parent-package]
+   Corresponds to ``ImportError: attempted relative import with no known parent package``
+.. [#beyond-top-level]
+   Corresponds to ``ImportError: attempted relative import beyond top-level package``
 .. |site-module| replace:: ``site``
 .. _site-module: https://docs.python.org/3/library/site.html
 .. |dash-S| replace:: ``-S``
