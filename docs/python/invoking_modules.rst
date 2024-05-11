@@ -214,8 +214,8 @@ would be in sys.path rather than ``pkg/`` itself, and therefore the imports
 must be written as ``import pkg.foo`` or ``import pkg.bar``.
 
 That's why for local projects, it's important to organize and run your scripts
-in a consistent manner. For example, you might always put modules in a single
-directory, including your scripts, and then run them directly:
+in a consistent manner. For example, you might put modules and scripts in the
+same directory and then run your scripts with ``python path/to/script.py``:
 
 .. _sys.path: https://docs.python.org/3/library/sys.html#sys.path
 
@@ -242,7 +242,8 @@ directory, including your scripts, and then run them directly:
     /my_project $ python app/validate.py
     /my_project $ python app/compile.py
 
-Or you'll organize all of your scripts into a package in your project root:
+Or you might organize all of your scripts into a package and use
+``python -m package.submodule``:
 
 .. code-block:: python
     :force:
