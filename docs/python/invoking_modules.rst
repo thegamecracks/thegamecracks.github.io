@@ -220,11 +220,13 @@ Take for example the following layout:
     └── main.py
 
 It's a common mistake to think that because ``pkg/foo.py`` and ``pkg/bar.py``
-are next to each other, both of them can do ``import bar`` or ``import foo``,
-since in reality it depends on whether their parent directory is in sys.path.
-If you ran foo.py using ``python -m pkg.foo``, the parent directory of ``pkg/``
-would be in sys.path rather than ``pkg/`` itself, and therefore the imports
-must be written as ``import pkg.foo`` or ``import pkg.bar``.
+are next to each other, both of them can do ``import foo`` or ``import bar``,
+since it really depends on whether their parent directory is in sys.path.
+If you were to run ``python main.py`` or ``python -m pkg.foo``,
+``CWD/`` would be in sys.path rather than ``pkg/`` itself,
+meaning Python can only resolve ``import pkg``.
+Therefore to import either submodule, it must be fully qualified as
+``import pkg.foo`` and ``import pkg.bar``.
 
 That's why for local projects, it's important to organize and run your scripts
 in a consistent manner. For example, you might put modules and scripts in the
