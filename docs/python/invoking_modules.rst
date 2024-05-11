@@ -173,7 +173,7 @@ by renaming ``main.py`` to ``__main__.py``:
 .. |dunder_main| replace:: ``__main__.py``
 .. _dunder_main: https://docs.python.org/3/library/__main__.html#main-py-in-python-packages
 
-Yup, that's all.
+Simple, right? Now, let's cover imports.
 
 What does importing a module really mean?
 -----------------------------------------
