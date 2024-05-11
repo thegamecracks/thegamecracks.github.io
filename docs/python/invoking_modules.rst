@@ -206,6 +206,19 @@ How an import like ``import matplotlib`` gets resolved in ``main.py``
 is no different from how it gets resolved in ``seaborn/__init__.py``.
 What changes is the directories listed in sys.path, mainly based on your
 environment variables and how you run the Python interpreter.
+
+Take for example the following layout:
+
+.. code-block:: python
+    :force:
+
+    CWD/
+    ├── pkg/
+    │   ├── __init__.py
+    │   ├── foo.py
+    │   └── bar.py
+    └── main.py
+
 It's a common mistake to think that because ``pkg/foo.py`` and ``pkg/bar.py``
 are next to each other, both of them can do ``import bar`` or ``import foo``,
 since in reality it depends on whether their parent directory is in sys.path.
