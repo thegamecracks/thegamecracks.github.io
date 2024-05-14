@@ -51,7 +51,8 @@ html_theme_options = {
 html_sidebars = {
     "blog/*": [
         "navbar-logo.html",
-        "search-field.html",
+        "icon-links.html",
+        "search-button-field.html",
         "ablog/postcard.html",
         "ablog/recentposts.html",
         "ablog/tagcloud.html",
@@ -61,7 +62,8 @@ html_sidebars = {
     ],
     "blog": [
         "navbar-logo.html",
-        "search-field.html",
+        "icon-links.html",
+        "search-button-field.html",
         "ablog/postcard.html",
         "ablog/recentposts.html",
         "ablog/tagcloud.html",
@@ -71,7 +73,8 @@ html_sidebars = {
     ],
     "posts/*": [
         "navbar-logo.html",
-        "search-field.html",
+        "icon-links.html",
+        "search-button-field.html",
         "ablog/postcard.html",
         "ablog/recentposts.html",
         # "ablog/tagcloud.html",
@@ -81,7 +84,8 @@ html_sidebars = {
     ],
     "index": [
         "navbar-logo.html",
-        "search-field.html",
+        "icon-links.html",
+        "search-button-field.html",
         # "ablog/postcard.html",
         # "ablog/recentposts.html",
         # "ablog/tagcloud.html",
