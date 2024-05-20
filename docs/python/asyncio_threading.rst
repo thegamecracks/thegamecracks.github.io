@@ -797,15 +797,14 @@ If you really need to do this, I suggest vendoring the `Runner <https://github.c
 class from CPython's source code, or re-purposing `asyncio.run() <https://github.com/python/cpython/blob/v3.10.14/Lib/asyncio/runners.py>`_'s
 implementation as it existed in 3.10 and older.
 
-Regardless of which one you pick above, they all have the same limitation
-in that the event loop stops running in between the coroutines you pass to it.
-If you wanted to say, serve multiple connections asynchronously, the event loop
-would only run during the ``.run()`` call when you add another connection, before
-pausing indefinitely again. This is where we come back to threads! With the above
-options in mind, how do we start an event loop in another thread?
+Regardless of which method you choose, they all have the same limitation in that
+the main thread cannot call other functions while it is executing coroutines
+on the event loop. If you could move the event loop's execution to another thread,
+that would free up the main thread to execute other functions.
+So, how do we make another thread run our event loop?
 
-Well, the first thing you can start with is passing :py:func:`asyncio.run()`
-as a target function for the thread to run:
+Well, the first thing you could start with is setting the thread's ``target=``
+function to :py:func:`asyncio.run()` and passing it a coroutine to execute:
 
 .. code-block:: python
 
