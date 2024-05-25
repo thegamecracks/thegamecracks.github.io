@@ -25,7 +25,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", ".gitkeep"]
 # Configuration for ablog
 # https://ablog.readthedocs.io/en/stable/
 blog_baseurl = "https://thegamecracks.github.io/"
-blog_post_pattern = "posts/*.rst"
+blog_post_pattern = "posts/**/*.rst"
 post_date_format = "%Y %B %d"
 post_date_format_short = "%B %Y"
 

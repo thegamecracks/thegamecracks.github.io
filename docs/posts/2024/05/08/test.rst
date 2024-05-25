@@ -2,6 +2,7 @@
 :author: thegamecracks
 :category: test
 :tags: test
+:redirect: posts/test
 
 Test Post
 =========
