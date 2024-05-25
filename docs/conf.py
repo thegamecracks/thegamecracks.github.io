@@ -49,7 +49,7 @@ html_theme_options = {
     "use_fullscreen_button": False,
 }
 html_sidebars = {
-    "blog/*": [
+    "blog/**": [
         "navbar-logo.html",
         "icon-links.html",
         "search-button-field.html",
@@ -71,7 +71,7 @@ html_sidebars = {
         "ablog/archives.html",
         "sbt-sidebar-nav.html",
     ],
-    "posts/*": [
+    "posts/**": [
         "navbar-logo.html",
         "icon-links.html",
         "search-button-field.html",
