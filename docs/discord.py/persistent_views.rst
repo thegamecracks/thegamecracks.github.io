@@ -154,7 +154,7 @@ state on disk.
         # and we want to restore that count every time the bot restarts.
         # Our database will keep track of each view's message ID and count
         # inside a table.
-        conn = sqlite3.connect("3-stateful.db")
+        conn = sqlite3.connect("stateful.db")
         conn.executescript(SQL_SCHEMA)
         try:
             yield conn
