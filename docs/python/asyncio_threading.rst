@@ -127,12 +127,11 @@ all callbacks that run on the event loop need to be non-blocking.
 One blocking callback, which could be one step of a coroutine that incorrectly
 makes a request using ``requests`` instead of an async HTTP client, would cause
 the entire event loop to stop processing events until that callback finished.
-The solution there is simple: use a library that relies on asyncio's mechanisms
-for non-blocking I/O, like `aiohttp`_ or `httpx`_.
-But sometimes it isn't that simple.
-Maybe there's no async library written for that purpose, too much code
-to migrate to async/await, or perhaps the blocking callback is CPU-bound
-rather than I/O-bound, such as image processing with `Pillow`_.
+The solution for that is simple: switch to a library that relies on asyncio's
+mechanisms for non-blocking I/O, like `aiohttp`_ or `httpx`_.
+But maybe your situation is more complex; no one's made an async library that
+fits your needs, or there's too much code to migrate to async/await, or your
+code is CPU-bound rather than I/O-bound (e.g. image processing with `Pillow`_).
 In this case, you'll need to fallback to pre-emptive multi-tasking, either
 with threads or `subprocesses`_. For this guide, I'll only cover threading.
 
