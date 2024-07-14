@@ -224,6 +224,95 @@ state on disk.
     client = MyClient()
     client.run("TOKEN")
 
+Using Dynamic Items
+-------------------
+
+In discord.py 2.4.0, a new `DynamicItem`_ class was introduced to allow defining
+components with a custom ID regex pattern instead of a fixed custom ID.
+Instead of needing to store view state in a database, this makes it possible
+to represent an individual component's state in the custom ID.
+You could store user IDs, channel IDs, or anything else you might find useful.
+However, Discord limits the custom ID to 100 characters so you must be careful
+to ensure that you don't exceed that length.
+
+.. _DynamicItem: https://discordpy.readthedocs.io/en/stable/interactions/api.html#discord.ui.DynamicItem
+
+Here's how the previous stateful.py example might be written using dynamic items:
+
+.. code-block:: python
+    :caption: dynamic.py
+
+    import re
+
+    import discord
+
+    # Instead of a view subclass, we subclass DynamicItem to define
+    # the button's callback and a regex pattern for the custom ID.
+    class DynamicCounter(
+        discord.ui.DynamicItem[discord.ui.Button],
+        template=r"counter:(?P<count>\d+)",
+    ):
+        def __init__(self, count: int):
+            super().__init__(
+                discord.ui.Button(
+                    label="Increment",
+                    custom_id=f"counter:{count}",
+                )
+            )
+            self.count = count
+
+        async def callback(self, interaction: discord.Interaction):
+            # When updating the state, the message must be edited afterwards
+            # with a new custom ID so it persists on Discord's servers.
+            self.count += 1
+            self.custom_id = f"counter:{self.count}"
+
+            # Other button attributes can be changed through the .item property:
+            # self.item.label = f"Total: {self.count}"
+
+            await interaction.response.edit_message(view=self.view)
+            await interaction.followup.send(
+                f"You have incremented this message's count to {self.count:,}!",
+                ephemeral=True,
+            )
+
+        # When discord.py receives an interaction for a message component,
+        # it tries to fully match the custom ID to the template defined above.
+        # If it succeeds, this method is called to construct the class so discord.py
+        # can invoke the callback method.
+        @classmethod
+        async def from_custom_id(
+            cls,
+            interaction: discord.Interaction,
+            item: discord.ui.Button,
+            match: re.Match[str],
+        ):
+            count = int(match["count"])
+            return cls(count)
+
+
+    class MyClient(discord.Client):
+        def __init__(self):
+            super().__init__(intents=discord.Intents.default())
+
+        async def setup_hook(self):
+            # During startup, let's tell discord.py how to handle components with
+            # custom IDs that match our DynamicCounter's template.
+            self.add_dynamic_items(DynamicCounter)
+
+        async def on_message(self, message: discord.Message):
+            # Invoke with "@mention !view" in a guild, or "!view" if you're DMing the bot.
+            # Restart your bot afterwards and see if the view remembers the same count,
+            # and also try it with multiple messages to see how their states differ.
+            if message.content.endswith("!view"):
+                view = discord.ui.View(timeout=None)
+                view.add_item(DynamicCounter(count=0))
+                await message.channel.send("Hello world!", view=view)
+
+
+    client = MyClient()
+    client.run("TOKEN")
+
 .. rubric:: Footnotes
 
 Original guide: https://gist.github.com/thegamecracks/0f9ab7ad3982e65ff4aa429acb39cc4e
