@@ -8,6 +8,9 @@ message components (i.e. buttons and select menus) after the bot has restarted.
 
 .. _discord.py: https://discordpy.readthedocs.io/
 
+Defining Stateless Views
+------------------------
+
 For a view to be persistent, all its components must have a custom ID
 and the view must have its timeout set to None. This can look something like:
 
@@ -37,6 +40,9 @@ This can be done with the |add_view|_ method:
 
 Once you start your bot, this will handle interactions from *all messages* that
 had ``CreateTicketView`` sent with them.
+
+Defining Stateful Views
+-----------------------
 
 This works well for views that are stateless, meaning the view doesn't have any
 attributes that need to be different between two messages with the same view.
@@ -97,6 +103,9 @@ state on disk.
 .. _asqlite: https://github.com/Rapptz/asqlite
 .. _asyncpg: https://magicstack.github.io/asyncpg/current/
 
+Stateless Example
+^^^^^^^^^^^^^^^^^
+
 .. code-block:: python
     :caption: stateless.py
 
@@ -131,6 +140,9 @@ state on disk.
 
 
     client.run("TOKEN")
+
+Stateful Example
+^^^^^^^^^^^^^^^^
 
 .. code-block:: python
     :caption: stateful.py
