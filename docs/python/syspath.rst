@@ -125,6 +125,9 @@ writing ``import bar``.
 
 .. _relative imports: https://docs.python.org/3/tutorial/modules.html#intra-package-references
 
+How should I structure my project?
+----------------------------------
+
 Because of these quirks, it's important to organize and run your scripts in a
 consistent format to avoid stumbling into import problems and having to re-write
 your imports. For example, you might put modules and scripts in the same directory
