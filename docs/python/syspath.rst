@@ -84,9 +84,9 @@ or by using the command ``python -m site``:
 Now, here's the important thing to know: **All absolute imports rely on sys.path.**
 
 It's a common mistake to think that because ``pkg/foo.py`` and ``pkg/bar.py``
-are next to each other, either of them can use ``import foo`` or ``import bar``,
-since absolute imports don't care about what modules are next to your script,
-only modules that can be found in sys.path.
+are next to each other, either of them can use ``import foo`` or ``import bar``.
+This is **false**. Absolute imports don't care about what modules are next to
+your script, only modules that can be found in sys.path.
 
 What affects sys.path then? The most important consideration here is how
 you run Python in the terminal. When you run a command like ``python path/to/script.py``,
