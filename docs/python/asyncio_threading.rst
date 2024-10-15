@@ -17,7 +17,10 @@ Before we discuss using threads, we need to talk about Python's
 `Global Interpreter Lock`_.
 
 On 2024-10-07, `Python 3.13`_ released with GIL and no-GIL builds
-as a result of the tremendous work done towards :pep:`703`.
+as a result of the tremendous work done towards :pep:`703`!
+However, "free-threaded CPython" is still in experimental stages,
+and will need a lot more community support before it can become widely adopted.
+
 For most of Python's lifetime, it lived with a lock that prevented the Python
 interpreter from executing more than one bytecode instruction at a time across
 threads. This meant that true parallelism with pure-Python code couldn't be
