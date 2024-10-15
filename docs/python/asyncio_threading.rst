@@ -16,18 +16,19 @@ Python's relationship with threading
 Before we discuss using threads, we need to talk about Python's
 `Global Interpreter Lock`_.
 
-As of 2024-05-08, Python 3.13 is slated to release in just under five months,
-which will come with GIL and no-GIL builds as a result of the tremendous work
-done towards :pep:`703`. For most of Python's lifetime, it lived with a lock
-that prevented the Python interpreter from executing more than one bytecode
-instruction at a time across threads. This meant that true parallelism with
-pure-Python code couldn't be achieved via multi-threading, so users that
-needed this had to look towards other alternatives like multi-processing
-which brings the overhead of :abbr:`IPC (inter-process communication)`,
-or C-extensions that release the GIL but take more effort to maintain
-and requires the extension to be compiled, either ahead of time by the
-maintainer or by the user installing the extension.
+On 2024-10-07, `Python 3.13`_ released with GIL and no-GIL builds
+as a result of the tremendous work done towards :pep:`703`.
+For most of Python's lifetime, it lived with a lock that prevented the Python
+interpreter from executing more than one bytecode instruction at a time across
+threads. This meant that true parallelism with pure-Python code couldn't be
+achieved via multi-threading, so users that needed this had to look towards
+other alternatives like multi-processing which brings the overhead of
+:abbr:`IPC (inter-process communication)`, or C-extensions that release
+the GIL but take more effort to maintain and requires the extension to be
+compiled, either ahead of time by the maintainer or by the user installing
+the extension.
 
+.. _Python 3.13: https://docs.python.org/3.13/whatsnew/3.13.html#free-threaded-cpython
 .. _Global Interpreter Lock: https://realpython.com/python-gil/
 
 As such, Python's multi-threading tended to be reserved for CPU-bound
