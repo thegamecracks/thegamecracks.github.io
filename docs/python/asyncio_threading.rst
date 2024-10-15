@@ -21,7 +21,7 @@ which will come with GIL and no-GIL builds as a result of the tremendous work
 done towards :pep:`703`. For most of Python's lifetime, it lived with a lock
 that prevented the Python interpreter from executing more than one bytecode
 instruction at a time across threads. This meant that true parallelism with
-pure-Python code couldn't be achived via multi-threading, so users that
+pure-Python code couldn't be achieved via multi-threading, so users that
 needed this had to look towards other alternatives like multi-processing
 which brings the overhead of :abbr:`IPC (inter-process communication)`,
 or C-extensions that release the GIL but take more effort to maintain
