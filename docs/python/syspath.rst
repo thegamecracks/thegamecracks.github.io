@@ -35,7 +35,8 @@ However, when you start getting into writing packages and putting submodules
 inside them, importing those submodules is no longer as intuitive as you
 might think.
 
-Take for example the following layout:
+Take for example the following layout, which we'll continue to reference for
+the next section:
 
 .. code-block:: python
     :force:
@@ -49,9 +50,10 @@ Take for example the following layout:
 
 If you were to write ``import bar`` in foo.py, what do you think would happen?
 Presumably Python would find bar.py and import its contents because it's next
-to foo.py, right? This is actually not always the case. ``import bar`` is an
-*absolute import*, which means it's going to follow Python's `sys.path`_ to
-find a ``bar`` module to be imported.
+to foo.py, right?
+
+This is not actually the case. ``import bar`` is an *absolute import*,
+and absolute imports need to follow `sys.path`_ to import modules.
 
 .. _sys.path: https://docs.python.org/3/library/sys.html#sys.path
 
@@ -59,17 +61,12 @@ How does sys.path affect imports?
 ---------------------------------
 
 sys.path is a list of directories that Python searches when resolving imports.
-When Python sees ``import bar``, it iterates through each directory to find the
-first module that matches the name ``bar`` before importing it.
-This includes your Python's standard library and the site-packages directory
-where your pip-installed modules go to.
-
-You can see for yourself what sys.path looks like by printing it out,
-or by using the command ``python -m site``:
+You can see what sys.path looks like by printing it out, or by using the command
+``python -m site``:
 
 .. code-block:: python
-    :force:
 
+    # Example output of python -m site:
     sys.path = [
         '/home/thegamecracks/thegamecracks.github.io',
         '/home/thegamecracks/.pyenv/versions/3.11.9/lib/python311.zip',
@@ -77,53 +74,76 @@ or by using the command ``python -m site``:
         '/home/thegamecracks/.pyenv/versions/3.11.9/lib/python3.11/lib-dynload',
         '/home/thegamecracks/thegamecracks.github.io/.venv/lib/python3.11/site-packages',
     ]
-    USER_BASE: '/home/thegamecracks/.local' (exists)
-    USER_SITE: '/home/thegamecracks/.local/lib/python3.11/site-packages' (doesn't exist)
-    ENABLE_USER_SITE: False
+    ...
+
+When Python sees ``import bar``, it iterates through each of the above directories
+to find a module that matches the name ``bar`` before importing it.
+This includes your Python's standard library, and the site-packages directory
+where your pip-installed modules go to.
 
 Now, here's the important thing to know: **All absolute imports rely on sys.path.**
 
 It's a common mistake to think that because ``pkg/foo.py`` and ``pkg/bar.py``
-are next to each other, either of them can use ``import foo`` or ``import bar``.
+are next to each other, they can import each other with ``import foo`` and ``import bar``.
 This is **false**. Absolute imports don't care about what modules are next to
 your script, only modules that can be found in sys.path.
 
-What affects sys.path then? The most important consideration here is how
-you run Python in the terminal. When you run a command like ``python path/to/script.py``,
+What affects sys.path then? The most important consideration is how you run Python
+in the terminal. When you run a command like ``python path/to/script.py``,
 Python adds the directory containing the script, ``path/to/``, to sys.path.
 So in the previous layout, if you ran ``python main.py``, ``CWD/`` would be in
 sys.path. This means Python would only be able to find the package ``pkg``,
 and not its inner modules ``foo`` and ``bar``.
-Therefore, to import either submodule, you must refer to them by their
-fully qualified names, ``pkg.foo`` and ``pkg.bar``, rather than simply
-writing ``import bar``.
 
-.. hint::
+In this situation, the correct way to import the submodules would be using
+their fully qualified names, ``pkg.foo`` and ``pkg.bar``:
 
-    This is where you might use `relative imports`_ over absolute imports!
+.. code-block:: python
 
-    .. code-block:: python
+    from pkg import foo
+    from pkg import bar
+    from pkg.foo import ham, spam
 
-        from . import foo
-        from . import bar
-        from .foo import ham, spam
+These absolute imports will work anywhere you write them, whether it be ``pkg/foo.py``
+or ``main.py``, as long as the package can be found in sys.path.
 
-    Python will assume that your relative imports start from each module's
-    parent package, ``pkg``, meaning you don't have to write out their fully
-    qualified names.
-    In other words, the above relative imports become equivalent to
-    the following absolute imports:
+What about relative imports?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    .. code-block:: python
+If you've seen any project that uses imports like ``from . import mod``, where
+the import always starts with ``from`` and is followed by one or more leading
+``.`` periods, those are known as `relative imports`_.
+They work inside any submodule where you need to import a sibling or parent module,
+and can be used in place of their equivalent absolute imports.
 
-        from pkg import foo
-        from pkg import bar
-        from pkg.foo import ham, spam
+For example, the absolute imports in the previous section could be re-written using
+relative imports like so:
 
-    But beware, relative imports can't be used outside of submodules.
-    You'll get an :py:exc:`ImportError` if you try to do so.
+.. code-block:: python
+
+    from . import foo
+    from . import bar
+    from .foo import ham, spam
 
 .. _relative imports: https://docs.python.org/3/tutorial/modules.html#intra-package-references
+
+Here, Python will assume that your relative imports start from each submodule's
+parent package, ``pkg``, meaning you don't have to write out their fully
+qualified names.
+
+Beware, relative imports aren't a general form of import that you can use to
+replace all absolute imports. For example, writing ``from . import pkg`` in
+main.py results in the following ``ImportError``:
+
+.. code-block:: python
+
+    Traceback (most recent call last):
+      File "main.py", line 1, in <module>
+        from . import pkg
+    ImportError: attempted relative import with no known parent package
+
+Relative imports are only allowed in submodules where you had to import them
+through a parent package, like ``pkg/foo.py`` and ``pkg/bar.py``.
 
 How should I structure my project?
 ----------------------------------
