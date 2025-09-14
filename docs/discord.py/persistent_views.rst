@@ -6,7 +6,29 @@ Writing Persistent Views
 In `discord.py`_, persistent views allow a bot to handle interactions from
 message components (i.e. buttons and select menus) after the bot has restarted.
 
+This guide was originally written for the `discord.ui.View`_ class which
+implements Components v1, allowing components to be tacked on the end of
+normal messages. Since discord.py 2.5.0, the newer `discord.ui.LayoutView`_
+was introduced to support `Components v2`_ messages, opening new possibilities
+for formatting textual / image content alongside interactive components.
+However, for the rest of this guide, we will be showing examples of View
+for simplicity.
+
+.. note::
+
+    To clarify, LayoutView supports the same mechanisms we're describing for
+    persistent views, including custom IDs in interactive components
+    (buttons, select menus), ``timeout=None``, and |add_view|_.
+    Layout and content components such as `discord.ui.TextDisplay`_ do **not**
+    require a custom ID and can be used like normal with persistent views.
+    You may follow this guide for Components v2, but the examples
+    shown here will need to be adapted to your code where necessary.
+
 .. _discord.py: https://discordpy.readthedocs.io/
+.. _discord.ui.View: https://discordpy.readthedocs.io/en/stable/interactions/api.html#discord.ui.View
+.. _discord.ui.LayoutView: https://discordpy.readthedocs.io/en/stable/interactions/api.html#discord.ui.LayoutView
+.. _Components v2: https://discord.com/developers/docs/change-log/2025-04-22-components-v2
+.. _discord.ui.TextDisplay: https://discordpy.readthedocs.io/en/stable/interactions/api.html#discord.ui.TextDisplay
 
 Basics
 ------
